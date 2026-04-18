@@ -37,7 +37,7 @@ export function ArticleContent({ content }: ArticleContentProps) {
 
   return (
     <div
-      className="prose prose-blue max-w-none prose-headings:scroll-mt-20 prose-a:text-blue-700 prose-img:rounded-xl prose-table:text-sm"
+      className="article-content"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )
