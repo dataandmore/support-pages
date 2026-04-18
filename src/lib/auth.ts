@@ -1,13 +1,10 @@
-import NextAuth from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import NextAuth, { type NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
 import { z } from "zod"
+import bcrypt from "bcryptjs"
+import { prisma } from "@/lib/prisma"
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
+const authConfig: NextAuthConfig = {
   providers: [
     Credentials({
       credentials: {
@@ -15,37 +12,63 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const parsed = z.object({
-          email: z.string().email(),
-          password: z.string().min(8),
-        }).safeParse(credentials)
+        const parsed = z
+          .object({
+            email: z.string().email(),
+            password: z.string().min(8),
+          })
+          .safeParse(credentials)
 
         if (!parsed.success) return null
 
         const user = await prisma.user.findUnique({
           where: { email: parsed.data.email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            passwordHash: true,
+          },
         })
 
         if (!user?.passwordHash) return null
 
-        const valid = await bcrypt.compare(parsed.data.password, user.passwordHash)
+        const valid = await bcrypt.compare(
+          parsed.data.password,
+          user.passwordHash
+        )
         if (!valid) return null
 
-        return { id: user.id, email: user.email, name: user.name, role: user.role }
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? undefined,
+          role: user.role,
+        }
       },
     }),
   ],
+  session: { strategy: "jwt" },
   callbacks: {
     jwt({ token, user }) {
-      if (user) token.role = (user as { role?: string }).role
+      if (user) {
+        token.id = user.id
+        token.role = (user as { role: string }).role
+      }
       return token
     },
     session({ session, token }) {
-      if (session.user) (session.user as { role?: string }).role = token.role as string | undefined
+      if (session.user) {
+        session.user.id = token.id as string
+        session.user.role = token.role as string
+      }
       return session
     },
   },
   pages: {
     signIn: "/en/login",
   },
-})
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig)

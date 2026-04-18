@@ -1,20 +1,26 @@
 import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 export default auth((req) => {
-  const isAdminRoute = req.nextUrl.pathname.startsWith("/admin")
-  const isLoggedIn = !!req.auth
-
-  if (isAdminRoute && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/en/login", req.url))
-  }
+  const { pathname } = req.nextUrl
 
   // Redirect root to /en
-  if (req.nextUrl.pathname === "/") {
+  if (pathname === "/") {
     return NextResponse.redirect(new URL("/en", req.url))
+  }
+
+  // Protect all /admin routes
+  if (pathname.startsWith("/admin") && !req.auth) {
+    const loginUrl = new URL("/en/login", req.url)
+    loginUrl.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 })
 
 export const config = {
-  matcher: ["/admin/:path*", "/"],
+  matcher: [
+    "/",
+    "/admin/:path*",
+  ],
 }
