@@ -10,16 +10,20 @@ import TiptapTextAlign from "@tiptap/extension-text-align"
 import TiptapHighlight from "@tiptap/extension-highlight"
 import TiptapYoutube from "@tiptap/extension-youtube"
 import { EditorToolbar } from "./EditorToolbar"
-import { useCallback } from "react"
+import { MediaPicker } from "./MediaPicker"
+import { useState } from "react"
 
 interface RichEditorProps {
   content?: unknown
   onChange: (content: unknown) => void
+  /** Optional: called when user uploads an image directly (file picker fallback). */
   onImageUpload?: (file: File) => Promise<string>
   placeholder?: string
 }
 
 export function RichEditor({ content, onChange, onImageUpload }: RichEditorProps) {
+  const [showMediaPicker, setShowMediaPicker] = useState(false)
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -46,27 +50,36 @@ export function RichEditor({ content, onChange, onImageUpload }: RichEditorProps
     },
   })
 
-  const handleImageUpload = useCallback(() => {
-    if (!editor || !onImageUpload) return
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = "image/*"
-    input.onchange = async () => {
-      const file = input.files?.[0]
-      if (!file) return
-      const url = await onImageUpload(file)
-      editor.chain().focus().setImage({ src: url }).run()
-    }
-    input.click()
-  }, [editor, onImageUpload])
+  // Opens the media library picker. Falls back to direct file upload if no picker is available.
+  function handleImageButtonClick() {
+    if (!editor) return
+    // If onImageUpload is provided (direct upload to /api/media), open the media picker
+    // which also supports file uploads internally.
+    setShowMediaPicker(true)
+  }
+
+  function handleMediaSelect(url: string) {
+    if (!editor) return
+    editor.chain().focus().setImage({ src: url }).run()
+    setShowMediaPicker(false)
+  }
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-      <EditorToolbar
-        editor={editor}
-        onImageUpload={onImageUpload ? handleImageUpload : undefined}
-      />
-      <EditorContent editor={editor} />
-    </div>
+    <>
+      <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+        <EditorToolbar
+          editor={editor}
+          onImageUpload={handleImageButtonClick}
+        />
+        <EditorContent editor={editor} />
+      </div>
+
+      {showMediaPicker && (
+        <MediaPicker
+          onSelect={handleMediaSelect}
+          onClose={() => setShowMediaPicker(false)}
+        />
+      )}
+    </>
   )
 }
