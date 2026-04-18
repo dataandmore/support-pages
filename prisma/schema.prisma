@@ -2,6 +2,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// NOTE: In Prisma 7, the database URL is configured in prisma.config.ts
+// rather than in schema.prisma. This is the Prisma 7 "config-first" approach.
 datasource db {
   provider = "postgresql"
 }
@@ -128,11 +130,13 @@ model Article {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  category     Category?          @relation(fields: [categoryId], references: [id])
+  category     Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   translations ArticleTranslation[]
   tags         ArticleTag[]
   relatedTo    RelatedArticle[]   @relation("ArticleRelatedTo")
   relatedFrom  RelatedArticle[]   @relation("ArticleRelatedFrom")
+
+  @@index([categoryId])
 }
 
 model ArticleTranslation {
@@ -154,6 +158,8 @@ model ArticleTranslation {
   reviewer   User?   @relation("ReviewedBy", fields: [reviewedBy], references: [id])
 
   @@unique([articleId, locale])
+  @@index([translatedBy])
+  @@index([reviewedBy])
 }
 
 model Tag {
@@ -182,6 +188,7 @@ model RelatedArticle {
   relatedArticle Article @relation("ArticleRelatedFrom", fields: [relatedArticleId], references: [id], onDelete: Cascade)
 
   @@id([articleId, relatedArticleId])
+  @@index([relatedArticleId])
 }
 
 // ─── Video ────────────────────────────────────────────────────────────────────
@@ -222,10 +229,12 @@ model Media {
   filename         String   @unique
   originalFilename String
   mimetype         String
-  size             Int
+  size             BigInt
   url              String
   uploadedBy       String?
   createdAt        DateTime @default(now())
 
   uploader User? @relation(fields: [uploadedBy], references: [id])
+
+  @@index([uploadedBy])
 }
