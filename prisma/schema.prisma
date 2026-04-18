@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum Locale {
+  en
+  da
+  sv
+  de
+}
+
+enum ArticleStatus {
+  DRAFT
+  AI_DRAFT
+  IN_REVIEW
+  PUBLISHED
+}
+
+enum VideoStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  ERROR
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  role          Role      @default(EDITOR)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  articles      ArticleTranslation[] @relation("TranslatedBy")
+  reviewedArticles ArticleTranslation[] @relation("ReviewedBy")
+  uploads       Media[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  icon        String?
+  position    Int      @default(0)
+  isGated     Boolean  @default(false)
+  parentId    String?
+  parent      Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryChildren")
+  articles    Article[]
+  translations CategoryTranslation[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CategoryTranslation {
+  id          String   @id @default(cuid())
+  categoryId  String
+  locale      Locale
+  name        String
+  description String?
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  @@unique([categoryId, locale])
+}
+
+model Article {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  categoryId   String?
+  isGated      Boolean  @default(false)
+  position     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  category     Category? @relation(fields: [categoryId], references: [id])
+  translations ArticleTranslation[]
+  tags         ArticleTag[]
+  relatedTo    RelatedArticle[] @relation("ArticleRelatedTo")
+  relatedFrom  RelatedArticle[] @relation("ArticleRelatedFrom")
+}
+
+model ArticleTranslation {
+  id           String        @id @default(cuid())
+  articleId    String
+  locale       Locale
+  title        String
+  content      Json
+  excerpt      String?
+  status       ArticleStatus @default(DRAFT)
+  translatedBy String?
+  reviewedBy   String?
+  publishedAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  article      Article       @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  translator   User?         @relation("TranslatedBy", fields: [translatedBy], references: [id])
+  reviewer     User?         @relation("ReviewedBy", fields: [reviewedBy], references: [id])
+  @@unique([articleId, locale])
+}
+
+model Tag {
+  id       String       @id @default(cuid())
+  slug     String       @unique
+  name     String
+  articles ArticleTag[]
+}
+
+model ArticleTag {
+  articleId String
+  tagId     String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@id([articleId, tagId])
+}
+
+model RelatedArticle {
+  articleId        String
+  relatedArticleId String
+  article          Article @relation("ArticleRelatedTo", fields: [articleId], references: [id], onDelete: Cascade)
+  relatedArticle   Article @relation("ArticleRelatedFrom", fields: [relatedArticleId], references: [id], onDelete: Cascade)
+  @@id([articleId, relatedArticleId])
+}
+
+model Video {
+  id               String      @id @default(cuid())
+  slug             String      @unique
+  filename         String
+  originalFilename String
+  size             BigInt
+  duration         Float?
+  status           VideoStatus @default(UPLOADING)
+  thumbnailPath    String?
+  hlsPath          String?
+  isGated          Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  translations     VideoTranslation[]
+}
+
+model VideoTranslation {
+  id          String @id @default(cuid())
+  videoId     String
+  locale      Locale
+  title       String
+  description String?
+  video       Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  @@unique([videoId, locale])
+}
+
+model Media {
+  id               String   @id @default(cuid())
+  filename         String   @unique
+  originalFilename String
+  mimetype         String
+  size             Int
+  url              String
+  uploadedBy       String?
+  createdAt        DateTime @default(now())
+  uploader         User?    @relation(fields: [uploadedBy], references: [id])
+}
