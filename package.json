@@ -13,7 +13,10 @@
     "migrate:scrape": "tsx scripts/scrape-hubspot.ts",
     "migrate:import": "tsx scripts/import-content.ts",
     "migrate:rewrite": "tsx scripts/rewrite-articles.ts",
-    "migrate:translate": "tsx scripts/translate-all.ts"
+    "migrate:translate": "tsx scripts/translate-all.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
@@ -68,12 +71,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.4",
     "cheerio": "^1.2.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.4"
   }
 }
