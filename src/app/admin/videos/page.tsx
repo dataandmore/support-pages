@@ -1,3 +1,624 @@
-export default function AdminVideosPage() {
-  return <div>AdminVideosPage — coming soon</div>
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+import {
+  Upload,
+  Trash2,
+  Edit2,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Lock,
+  Unlock,
+  Play,
+  X,
+} from "lucide-react"
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type VideoStatus = "UPLOADING" | "PROCESSING" | "READY" | "ERROR"
+type Locale = "en" | "da" | "sv" | "de"
+
+interface VideoTranslation {
+  locale: Locale
+  title: string
+  description: string | null
+}
+
+interface Video {
+  id: string
+  slug: string
+  originalFilename: string
+  size: string
+  duration: number | null
+  status: VideoStatus
+  thumbnailPath: string | null
+  hlsPath: string | null
+  isGated: boolean
+  createdAt: string
+  translations: VideoTranslation[]
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const LOCALES: Locale[] = ["en", "da", "sv", "de"]
+const LOCALE_LABELS: Record<Locale, string> = {
+  en: "EN",
+  da: "DA",
+  sv: "SV",
+  de: "DE",
+}
+
+function formatDuration(seconds: number | null): string {
+  if (!seconds) return "—"
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${String(s).padStart(2, "0")}`
+}
+
+function formatSize(bytes: string): string {
+  const n = parseInt(bytes, 10)
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`
+  return `${(n / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
+const statusConfig: Record<
+  VideoStatus,
+  { label: string; classes: string; spinning?: boolean }
+> = {
+  UPLOADING: { label: "Uploading", classes: "bg-gray-100 text-gray-600", spinning: true },
+  PROCESSING: { label: "Processing", classes: "bg-yellow-100 text-yellow-700", spinning: true },
+  READY: { label: "Ready", classes: "bg-green-100 text-green-700" },
+  ERROR: { label: "Error", classes: "bg-red-100 text-red-700" },
+}
+
+// ---------------------------------------------------------------------------
+// EditModal
+// ---------------------------------------------------------------------------
+
+interface EditModalProps {
+  video: Video
+  onClose: () => void
+  onSaved: (video: Video) => void
+}
+
+function EditModal({ video, onClose, onSaved }: EditModalProps) {
+  const [activeLocale, setActiveLocale] = useState<Locale>("en")
+  const [isGated, setIsGated] = useState(video.isGated)
+  const [saving, setSaving] = useState(false)
+
+  const [translations, setTranslations] = useState<
+    Record<Locale, { title: string; description: string }>
+  >(() => {
+    const map: Record<Locale, { title: string; description: string }> = {
+      en: { title: "", description: "" },
+      da: { title: "", description: "" },
+      sv: { title: "", description: "" },
+      de: { title: "", description: "" },
+    }
+    for (const t of video.translations) {
+      map[t.locale] = { title: t.title, description: t.description ?? "" }
+    }
+    return map
+  })
+
+  function updateField(locale: Locale, field: "title" | "description", value: string) {
+    setTranslations((prev) => ({
+      ...prev,
+      [locale]: { ...prev[locale], [field]: value },
+    }))
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      // Save each locale that has a non-empty title.
+      for (const locale of LOCALES) {
+        const t = translations[locale]
+        if (!t.title.trim()) continue
+        await fetch(`/api/videos/${video.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            locale,
+            title: t.title,
+            description: t.description || null,
+          }),
+        })
+      }
+      // Update isGated separately.
+      const res = await fetch(`/api/videos/${video.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isGated }),
+      })
+      const data = await res.json()
+      if (data.video) onSaved(data.video)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h3 className="font-semibold text-gray-900">Edit video</h3>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Locale tabs */}
+        <div className="flex gap-1 px-6 pt-4">
+          {LOCALES.map((loc) => (
+            <button
+              key={loc}
+              onClick={() => setActiveLocale(loc)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                activeLocale === loc
+                  ? "bg-blue-700 text-white"
+                  : "text-gray-500 hover:bg-gray-100"
+              }`}
+            >
+              {LOCALE_LABELS[loc]}
+            </button>
+          ))}
+        </div>
+
+        {/* Fields */}
+        <div className="px-6 py-4 space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <input
+              type="text"
+              value={translations[activeLocale].title}
+              onChange={(e) => updateField(activeLocale, "title", e.target.value)}
+              placeholder={`Title in ${LOCALE_LABELS[activeLocale]}`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={translations[activeLocale].description}
+              onChange={(e) => updateField(activeLocale, "description", e.target.value)}
+              placeholder={`Description in ${LOCALE_LABELS[activeLocale]}`}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+
+          {/* isGated toggle */}
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              role="switch"
+              aria-checked={isGated}
+              onClick={() => setIsGated((v) => !v)}
+              className={`relative w-10 h-6 rounded-full transition-colors ${
+                isGated ? "bg-blue-700" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  isGated ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+            <span className="text-sm text-gray-700 flex items-center gap-1.5">
+              {isGated ? (
+                <>
+                  <Lock className="w-3.5 h-3.5" /> Gated (login required)
+                </>
+              ) : (
+                <>
+                  <Unlock className="w-3.5 h-3.5" /> Public
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-4 py-2 text-sm bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-60 flex items-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
+
+export default function VideosPage() {
+  const [videos, setVideos] = useState<Video[]>([])
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [editingVideo, setEditingVideo] = useState<Video | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const pollingIntervals = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
+
+  useEffect(() => {
+    loadVideos()
+    return () => {
+      pollingIntervals.current.forEach((interval) => clearInterval(interval))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function loadVideos() {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/videos")
+      const data = await res.json()
+      const list: Video[] = data.videos ?? []
+      setVideos(list)
+      // Resume polling for any in-flight videos.
+      list.forEach((v) => {
+        if (v.status === "UPLOADING" || v.status === "PROCESSING") {
+          startPolling(v.id)
+        }
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function startPolling(videoId: string) {
+    if (pollingIntervals.current.has(videoId)) return
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/videos/${videoId}/status`)
+        const status = await res.json()
+        setVideos((prev) =>
+          prev.map((v) =>
+            v.id === videoId
+              ? {
+                  ...v,
+                  status: status.status,
+                  duration: status.duration ?? v.duration,
+                  thumbnailPath: status.thumbnailPath ?? v.thumbnailPath,
+                  hlsPath: status.hlsPath ?? v.hlsPath,
+                }
+              : v
+          )
+        )
+        if (status.status === "READY" || status.status === "ERROR") {
+          clearInterval(interval)
+          pollingIntervals.current.delete(videoId)
+        }
+      } catch {
+        // Network error — keep polling.
+      }
+    }, 3000)
+    pollingIntervals.current.set(videoId, interval)
+  }
+
+  function handleFileSelect(file: File) {
+    if (!file.type.startsWith("video/")) {
+      alert("Please select a video file.")
+      return
+    }
+    setSelectedFile(file)
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFileSelect(file)
+  }
+
+  function handleUpload() {
+    if (!selectedFile) return
+    const formData = new FormData()
+    formData.append("file", selectedFile)
+    setUploading(true)
+    setUploadProgress(0)
+
+    const xhr = new XMLHttpRequest()
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        setUploadProgress(Math.round((e.loaded / e.total) * 100))
+      }
+    })
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status === 202) {
+        const data = JSON.parse(xhr.responseText)
+        const video: Video = data.video
+        setVideos((prev) => [video, ...prev])
+        startPolling(video.id)
+        setSelectedFile(null)
+        setUploadProgress(0)
+        if (fileInputRef.current) fileInputRef.current.value = ""
+      } else {
+        alert("Upload failed. Please try again.")
+      }
+      setUploading(false)
+    })
+
+    xhr.addEventListener("error", () => {
+      alert("Upload error. Please try again.")
+      setUploading(false)
+    })
+
+    xhr.open("POST", "/api/videos")
+    xhr.send(formData)
+  }
+
+  async function handleDelete(videoId: string) {
+    if (!confirm("Delete this video? This cannot be undone.")) return
+    const interval = pollingIntervals.current.get(videoId)
+    if (interval) {
+      clearInterval(interval)
+      pollingIntervals.current.delete(videoId)
+    }
+    setVideos((prev) => prev.filter((v) => v.id !== videoId))
+    await fetch(`/api/videos/${videoId}`, { method: "DELETE" })
+  }
+
+  return (
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Videos</h1>
+        <span className="text-sm text-gray-500">
+          {videos.length} video{videos.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Upload zone */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">Upload new video</h2>
+
+        <div
+          onDrop={handleDrop}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragOver(true)
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onClick={() => !selectedFile && fileInputRef.current?.click()}
+          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+            dragOver
+              ? "border-blue-400 bg-blue-50"
+              : selectedFile
+              ? "border-green-400 bg-green-50"
+              : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) handleFileSelect(file)
+            }}
+          />
+          {selectedFile ? (
+            <div className="space-y-1">
+              <CheckCircle className="w-8 h-8 text-green-500 mx-auto" />
+              <p className="text-sm font-medium text-green-700">{selectedFile.name}</p>
+              <p className="text-xs text-green-600">{formatSize(String(selectedFile.size))}</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Upload className="w-8 h-8 text-gray-400 mx-auto" />
+              <p className="text-sm font-medium text-gray-600">
+                Drop a video file here, or click to browse
+              </p>
+              <p className="text-xs text-gray-400">MP4, MOV, WebM, MKV…</p>
+            </div>
+          )}
+        </div>
+
+        {/* Upload progress bar */}
+        {uploading && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+              <span>Uploading…</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-blue-700 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {selectedFile && !uploading && (
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={handleUpload}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              Upload &amp; transcode
+            </button>
+            <button
+              onClick={() => {
+                setSelectedFile(null)
+                if (fileInputRef.current) fileInputRef.current.value = ""
+              }}
+              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Video table */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+          </div>
+        ) : videos.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Play className="w-10 h-10 text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-500">No videos yet</p>
+            <p className="text-xs text-gray-400 mt-1">Upload your first video above</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="text-left px-4 py-3 font-medium text-gray-600 w-20">Preview</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Title (EN)</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Duration</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Size</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Access</th>
+                <th className="w-20"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {videos.map((video) => {
+                const enTitle =
+                  video.translations.find((t) => t.locale === "en")?.title ??
+                  video.originalFilename
+                const cfg = statusConfig[video.status]
+                return (
+                  <tr key={video.id} className="hover:bg-gray-50 transition-colors">
+                    {/* Thumbnail */}
+                    <td className="px-4 py-3">
+                      {video.thumbnailPath ? (
+                        <img
+                          src={`/api/stream/${video.thumbnailPath}`}
+                          alt=""
+                          className="w-16 h-10 object-cover rounded-lg bg-gray-100"
+                        />
+                      ) : (
+                        <div className="w-16 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                          <Play className="w-4 h-4 text-gray-300" />
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Title + filename */}
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900 truncate max-w-xs">{enTitle}</p>
+                      <p className="text-xs text-gray-400 truncate max-w-xs mt-0.5">
+                        {video.originalFilename}
+                      </p>
+                    </td>
+
+                    {/* Status badge */}
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.classes}`}
+                      >
+                        {cfg.spinning ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : video.status === "READY" ? (
+                          <CheckCircle className="w-3 h-3" />
+                        ) : (
+                          <XCircle className="w-3 h-3" />
+                        )}
+                        {cfg.label}
+                      </span>
+                    </td>
+
+                    {/* Duration */}
+                    <td className="px-4 py-3 text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-gray-400" />
+                        {formatDuration(video.duration)}
+                      </span>
+                    </td>
+
+                    {/* Size */}
+                    <td className="px-4 py-3 text-gray-500 text-xs">
+                      {formatSize(video.size)}
+                    </td>
+
+                    {/* Access */}
+                    <td className="px-4 py-3">
+                      {video.isGated ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+                          <Lock className="w-3.5 h-3.5" /> Gated
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                          <Unlock className="w-3.5 h-3.5" /> Public
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingVideo(video)}
+                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                          title="Edit metadata"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(video.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                          title="Delete video"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Edit modal */}
+      {editingVideo && (
+        <EditModal
+          video={editingVideo}
+          onClose={() => setEditingVideo(null)}
+          onSaved={(updated) => {
+            setVideos((prev) =>
+              prev.map((v) => (v.id === updated.id ? { ...v, ...updated } : v))
+            )
+            setEditingVideo(null)
+          }}
+        />
+      )}
+    </div>
+  )
 }
