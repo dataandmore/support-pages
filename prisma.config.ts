@@ -1,7 +1,6 @@
-import * as dotenv from "dotenv"
 import { defineConfig, env } from "prisma/config"
 
-dotenv.config({ path: ".env.local" })
+process.loadEnvFile(".env.local")
 
 type Env = {
   DATABASE_URL: string
