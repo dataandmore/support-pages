@@ -1,3 +1,92 @@
-export default function CategoryPage() {
-  return <div>CategoryPage — coming soon</div>
+import { notFound } from "next/navigation"
+import { prisma } from "@/lib/prisma"
+import { isValidLocale, defaultLocale } from "@/lib/i18n"
+import { Header } from "@/components/public/Header"
+import { Footer } from "@/components/public/Footer"
+import { Breadcrumb } from "@/components/public/Breadcrumb"
+import { ArticleCard } from "@/components/public/ArticleCard"
+import type { Metadata } from "next"
+
+type Props = { params: Promise<{ locale: string; categorySlug: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale, categorySlug } = await params
+  const validLocale = isValidLocale(locale) ? locale : defaultLocale
+  const category = await prisma.category.findUnique({
+    where: { slug: categorySlug },
+    include: { translations: { where: { locale: validLocale as any } } },
+  })
+  const name = category?.translations[0]?.name ?? categorySlug
+  return { title: name }
+}
+
+export default async function CategoryPage({ params }: Props) {
+  const { locale, categorySlug } = await params
+  const validLocale = isValidLocale(locale) ? locale : defaultLocale
+
+  const category = await prisma.category.findUnique({
+    where: { slug: categorySlug },
+    include: {
+      translations: { where: { locale: validLocale as any } },
+      articles: {
+        where: {
+          translations: {
+            some: { locale: validLocale as any, status: "PUBLISHED" },
+          },
+        },
+        orderBy: { position: "asc" },
+        include: {
+          translations: {
+            where: { locale: validLocale as any, status: "PUBLISHED" },
+          },
+        },
+      },
+    },
+  })
+
+  if (!category) notFound()
+
+  const translation = category.translations[0]
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header locale={validLocale} />
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
+        <Breadcrumb
+          crumbs={[
+            { label: "Support", href: `/${validLocale}` },
+            { label: translation?.name ?? categorySlug },
+          ]}
+        />
+
+        <div className="flex items-center gap-3 mb-8">
+          <span className="text-4xl">{category.icon ?? "📄"}</span>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {translation?.name ?? categorySlug}
+            </h1>
+            {translation?.description && (
+              <p className="text-gray-500 mt-1">{translation.description}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {category.articles.length === 0 ? (
+            <p className="text-gray-500 text-sm">No articles published yet.</p>
+          ) : (
+            category.articles.map((article) => (
+              <ArticleCard
+                key={article.id}
+                article={article}
+                categorySlug={categorySlug}
+                locale={validLocale}
+              />
+            ))
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  )
 }
