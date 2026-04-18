@@ -6,6 +6,8 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
 enum Role {
   ADMIN
   EDITOR
@@ -33,19 +35,22 @@ enum VideoStatus {
   ERROR
 }
 
+// ─── Auth (NextAuth v5 required models) ──────────────────────────────────────
+
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String   @id @default(cuid())
+  email         String   @unique
   name          String?
   passwordHash  String?
-  role          Role      @default(EDITOR)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  articles      ArticleTranslation[] @relation("TranslatedBy")
-  reviewedArticles ArticleTranslation[] @relation("ReviewedBy")
-  uploads       Media[]
+  role          Role     @default(EDITOR)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  translatedArticles ArticleTranslation[] @relation("TranslatedBy")
+  reviewedArticles   ArticleTranslation[] @relation("ReviewedBy")
+  uploads          Media[]
 }
 
 model Account {
@@ -54,14 +59,16 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
 }
 
@@ -70,47 +77,62 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Content ──────────────────────────────────────────────────────────────────
+
 model Category {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  icon        String?
-  position    Int      @default(0)
-  isGated     Boolean  @default(false)
-  parentId    String?
-  parent      Category?  @relation("CategoryChildren", fields: [parentId], references: [id])
-  children    Category[] @relation("CategoryChildren")
-  articles    Article[]
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  icon      String?
+  position  Int      @default(0)
+  isGated   Boolean  @default(false)
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent       Category?            @relation("CategoryChildren", fields: [parentId], references: [id])
+  children     Category[]           @relation("CategoryChildren")
+  articles     Article[]
   translations CategoryTranslation[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model CategoryTranslation {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   categoryId  String
   locale      Locale
   name        String
   description String?
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@unique([categoryId, locale])
 }
 
 model Article {
-  id           String   @id @default(cuid())
-  slug         String   @unique
-  categoryId   String?
-  isGated      Boolean  @default(false)
-  position     Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  category     Category? @relation(fields: [categoryId], references: [id])
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  categoryId String?
+  isGated    Boolean  @default(false)
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category     Category?          @relation(fields: [categoryId], references: [id])
   translations ArticleTranslation[]
   tags         ArticleTag[]
-  relatedTo    RelatedArticle[] @relation("ArticleRelatedTo")
-  relatedFrom  RelatedArticle[] @relation("ArticleRelatedFrom")
+  relatedTo    RelatedArticle[]   @relation("ArticleRelatedTo")
+  relatedFrom  RelatedArticle[]   @relation("ArticleRelatedFrom")
 }
 
 model ArticleTranslation {
@@ -119,16 +141,18 @@ model ArticleTranslation {
   locale       Locale
   title        String
   content      Json
-  excerpt      String?
+  excerpt      String?       @db.Text
   status       ArticleStatus @default(DRAFT)
   translatedBy String?
   reviewedBy   String?
   publishedAt  DateTime?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  article      Article       @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  translator   User?         @relation("TranslatedBy", fields: [translatedBy], references: [id])
-  reviewer     User?         @relation("ReviewedBy", fields: [reviewedBy], references: [id])
+
+  article    Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  translator User?   @relation("TranslatedBy", fields: [translatedBy], references: [id])
+  reviewer   User?   @relation("ReviewedBy", fields: [reviewedBy], references: [id])
+
   @@unique([articleId, locale])
 }
 
@@ -136,24 +160,31 @@ model Tag {
   id       String       @id @default(cuid())
   slug     String       @unique
   name     String
+
   articles ArticleTag[]
 }
 
 model ArticleTag {
   articleId String
   tagId     String
-  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
-  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
   @@id([articleId, tagId])
 }
 
 model RelatedArticle {
   articleId        String
   relatedArticleId String
-  article          Article @relation("ArticleRelatedTo", fields: [articleId], references: [id], onDelete: Cascade)
-  relatedArticle   Article @relation("ArticleRelatedFrom", fields: [relatedArticleId], references: [id], onDelete: Cascade)
+
+  article        Article @relation("ArticleRelatedTo",   fields: [articleId],        references: [id], onDelete: Cascade)
+  relatedArticle Article @relation("ArticleRelatedFrom", fields: [relatedArticleId], references: [id], onDelete: Cascade)
+
   @@id([articleId, relatedArticleId])
 }
+
+// ─── Video ────────────────────────────────────────────────────────────────────
 
 model Video {
   id               String      @id @default(cuid())
@@ -168,18 +199,23 @@ model Video {
   isGated          Boolean     @default(false)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
-  translations     VideoTranslation[]
+
+  translations VideoTranslation[]
 }
 
 model VideoTranslation {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   videoId     String
   locale      Locale
   title       String
-  description String?
-  video       Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  description String? @db.Text
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
   @@unique([videoId, locale])
 }
+
+// ─── Media ────────────────────────────────────────────────────────────────────
 
 model Media {
   id               String   @id @default(cuid())
@@ -190,5 +226,6 @@ model Media {
   url              String
   uploadedBy       String?
   createdAt        DateTime @default(now())
-  uploader         User?    @relation(fields: [uploadedBy], references: [id])
+
+  uploader User? @relation(fields: [uploadedBy], references: [id])
 }
