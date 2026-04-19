@@ -15,3 +15,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
    Colour palette: orange (#EC6E1E) for actions/links, dark charcoal (#2A2A2C) for headings,
    gray-* for neutral surfaces, orange-* for tints/backgrounds.
 <!-- END:design-rules -->
+
+<!-- BEGIN:dev-server -->
+# Dev server
+
+The support portal dev site runs at **http://localhost:3040**
+
+Always start it with:
+```
+npm run dev -- --port 3040
+```
+<!-- END:dev-server -->
