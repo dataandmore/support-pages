@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { isValidLocale, defaultLocale } from "@/lib/i18n"
 import { LanguageSwitcher } from "./LanguageSwitcher"
 import { SearchBar } from "./SearchBar"
@@ -23,16 +24,15 @@ export function Header({ locale, hideSearch = false }: HeaderProps) {
         <div className="flex items-center justify-between h-16 gap-4">
 
           {/* Logo */}
-          <Link
-            href={`/${validLocale}`}
-            className="flex items-center gap-2.5 shrink-0"
-          >
-            <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center shadow-sm">
-              <span className="text-white text-xs font-bold tracking-tight">D&M</span>
-            </div>
-            <span className="font-semibold text-gray-900 hidden sm:block text-sm">
-              Data &amp; More Support
-            </span>
+          <Link href={`/${validLocale}`} className="flex items-center shrink-0">
+            <Image
+              src="/logo-dark.png"
+              alt="Data & More"
+              width={140}
+              height={40}
+              className="h-8 w-auto object-contain"
+              priority
+            />
           </Link>
 
           {/* Desktop search bar (hidden on homepage where hero has it) */}
