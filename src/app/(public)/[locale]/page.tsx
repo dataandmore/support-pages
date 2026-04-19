@@ -8,8 +8,7 @@ import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Support Center",
-  description:
-    "Find answers, guides, and tutorials for all Data & More products.",
+  description: "Find answers, guides, and tutorials for all Data & More products.",
 }
 
 export default async function HomePage({
@@ -53,11 +52,11 @@ export default async function HomePage({
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: "#f5f6f8" }}>
       <Header locale={validLocale} hideSearch />
 
-      {/* ── Hero with video background ── */}
-      <section className="relative overflow-hidden text-white" style={{ minHeight: 360 }}>
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden" style={{ background: "#1a1a2c" }}>
         {/* Video background — place hero-video.mp4 in /public to activate */}
         <video
           className="absolute inset-0 w-full h-full object-cover"
@@ -70,24 +69,45 @@ export default async function HomePage({
           <source src="/hero-video.mp4" type="video/mp4" />
         </video>
 
-        {/* Dark overlay — ensures text is legible over any video */}
+        {/* Dark overlay over video (also serves as fallback when no video) */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(135deg, rgba(26,26,44,0.92) 0%, rgba(42,42,60,0.88) 50%, rgba(62,40,20,0.85) 100%)",
+              "linear-gradient(135deg, rgba(26,26,44,0.95) 0%, rgba(42,28,14,0.90) 100%)",
           }}
         />
 
-        {/* Orange accent line at top */}
+        {/* Orange top accent */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-[#EC6E1E]" />
 
-        {/* Content */}
-        <div className="relative z-10 max-w-2xl mx-auto px-4 text-center py-20 sm:py-24">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 tracking-tight leading-tight">
+        {/* Subtle grid texture */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#EC6E1E 1px, transparent 1px), linear-gradient(90deg, #EC6E1E 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+
+        {/* Orange glow */}
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 rounded-full opacity-10 pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, #EC6E1E 0%, transparent 70%)",
+            transform: "translate(30%, 30%)",
+          }}
+        />
+
+        <div className="relative z-10 max-w-2xl mx-auto px-4 text-center py-24 sm:py-32">
+          <p className="text-[#EC6E1E] text-sm font-semibold uppercase tracking-widest mb-5">
+            Data &amp; More Support
+          </p>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-5 tracking-tight leading-tight">
             {heroText[validLocale] ?? heroText.en}
           </h1>
-          <p className="text-white/70 mb-10 text-base sm:text-lg">
+          <p className="text-white/50 mb-10 text-base sm:text-lg">
             {subText[validLocale] ?? subText.en}
           </p>
           <HeroSearch locale={validLocale} />
@@ -95,8 +115,8 @@ export default async function HomePage({
       </section>
 
       {/* ── Category grid ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex-1 w-full">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-1 w-full">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-7">
           {categoryLabel[validLocale] ?? categoryLabel.en}
         </p>
 
@@ -108,7 +128,6 @@ export default async function HomePage({
           </div>
         ) : (
           <div className="text-center py-24 text-gray-400">
-            <p className="text-4xl mb-4">📚</p>
             <p className="text-sm">No categories yet — check back soon.</p>
           </div>
         )}
