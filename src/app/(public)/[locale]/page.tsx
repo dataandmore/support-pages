@@ -4,6 +4,7 @@ import { CategoryCard } from "@/components/public/CategoryCard"
 import { Header } from "@/components/public/Header"
 import { Footer } from "@/components/public/Footer"
 import { HeroSearch } from "@/components/public/HeroSearch"
+import { HeroVideo } from "@/components/public/HeroVideo"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -57,17 +58,8 @@ export default async function HomePage({
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden" style={{ background: "#1a1a2c" }}>
-        {/* Video background — place hero-video.mp4 in /public to activate */}
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-          aria-hidden="true"
-        >
-          <source src="/hero-video.mp4" type="video/mp4" />
-        </video>
+        {/* Video background — cycles randomly through all 4 bg videos */}
+        <HeroVideo />
 
         {/* Dark overlay over video (also serves as fallback when no video) */}
         <div
