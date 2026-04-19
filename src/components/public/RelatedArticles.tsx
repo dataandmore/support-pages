@@ -25,7 +25,7 @@ export function RelatedArticles({ articles, locale }: RelatedArticlesProps) {
             <Link
               key={article.slug}
               href={`/${locale}/knowledge/${categorySlug}/${article.slug}`}
-              className="block text-blue-700 hover:underline text-sm"
+              className="block text-[#EC6E1E] hover:underline text-sm"
             >
               → {title}
             </Link>

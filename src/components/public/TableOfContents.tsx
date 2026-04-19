@@ -55,8 +55,8 @@ export function TableOfContents() {
           >
             <a
               href={`#${item.id}`}
-              className={`block transition-colors hover:text-blue-700 ${
-                activeId === item.id ? "text-blue-700 font-medium" : "text-gray-500"
+              className={`block transition-colors hover:text-[#EC6E1E] ${
+                activeId === item.id ? "text-[#EC6E1E] font-medium" : "text-gray-500"
               }`}
             >
               {item.text}

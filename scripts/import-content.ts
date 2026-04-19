@@ -3,10 +3,38 @@ import type { AnyNode, Element as DomElement, Text as DomText } from "domhandler
 import fs from "fs/promises"
 import path from "path"
 import { PrismaClient } from "@prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
 
-const prisma = new PrismaClient()
+// Load env vars from .env.local (Prisma v7 requires adapter pattern)
+process.loadEnvFile(path.join(process.cwd(), ".env.local"))
+
+function createPrisma() {
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) throw new Error("DATABASE_URL not set")
+  const adapter = new PrismaPg({ connectionString })
+  return new PrismaClient({ adapter })
+}
+
+const prisma = createPrisma()
 
 const SCRAPED_DIR = path.join(process.cwd(), "scripts", "scraped")
+
+// ─── Category slug mapping (scraped → DB) ─────────────────────────────────────
+// Maps HubSpot category slugs to the new DB category slugs
+const CATEGORY_SLUG_MAP: Record<string, string> = {
+  "organisational-roll-out": "organisation-rollout",
+  "it-onboarding": "it-setup-onboarding",
+  "data-sources": "using-the-platform",
+  "compliance-server-how-to-videos": "using-the-platform",
+  "data-more-videos": "video-library",
+  "security-compliance": "security-compliance",
+  "operations-updates": "operations-updates",
+  "getting-started": "getting-started",
+}
+
+function mapCategorySlug(raw: string): string {
+  return CATEGORY_SLUG_MAP[raw] ?? raw
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -334,12 +362,13 @@ async function main() {
     // 6. Generate excerpt from raw HTML
     const excerpt = extractExcerpt(article.html)
 
-    // 7. Resolve category ID (null if not found)
-    const categoryId = categoryIdBySlug.get(article.categorySlug) ?? null
+    // 7. Resolve category ID (null if not found) — apply slug mapping
+    const mappedCategorySlug = mapCategorySlug(article.categorySlug)
+    const categoryId = categoryIdBySlug.get(mappedCategorySlug) ?? null
 
     if (!categoryId) {
       console.warn(
-        `[import] WARN: No category found for slug "${article.categorySlug}" (article: ${article.slug})`
+        `[import] WARN: No category found for slug "${article.categorySlug}" → "${mappedCategorySlug}" (article: ${article.slug})`
       )
     }
 

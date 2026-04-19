@@ -31,7 +31,7 @@ export function SearchBar({ locale, placeholder, compact = false }: SearchBarPro
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder ?? "Search articles…"}
-          className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 focus:bg-white transition-colors"
+          className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-[#EC6E1E] focus:bg-white transition-colors"
         />
       </form>
     )

@@ -204,11 +204,11 @@ export default async function SettingsPage() {
       </section>
 
       {/* Info banner */}
-      <div className="flex gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
-        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+      <div className="flex gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-[#d4601a]">
+        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-orange-500" />
         <span>
           All configuration is managed via environment variables. Edit{" "}
-          <code className="font-mono bg-blue-100 px-1 rounded">.env.local</code> on the server and
+          <code className="font-mono bg-orange-100 px-1 rounded">.env.local</code> on the server and
           restart the container to apply changes.
         </span>
       </div>

@@ -33,12 +33,12 @@ export default function NewArticlePage() {
           onKeyDown={(e) => e.key === "Enter" && create()}
           autoFocus
           placeholder="e.g. How to connect Microsoft 365"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 mb-4"
         />
         <button
           onClick={create}
           disabled={!title.trim() || creating}
-          className="w-full py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 disabled:opacity-50 transition-colors"
+          className="w-full py-2 bg-[#EC6E1E] text-white text-sm font-medium rounded-lg hover:bg-[#d4601a] disabled:opacity-50 transition-colors"
         >
           {creating ? "Creating…" : "Create article"}
         </button>

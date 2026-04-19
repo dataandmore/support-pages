@@ -129,7 +129,7 @@ export default function MediaPage() {
         onClick={() => fileInputRef.current?.click()}
         className={`border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-colors mb-8 ${
           dragOver
-            ? "border-blue-400 bg-blue-50"
+            ? "border-[#EC6E1E] bg-orange-50"
             : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
         }`}
       >
@@ -145,7 +145,7 @@ export default function MediaPage() {
         />
         {uploading ? (
           <div className="flex flex-col items-center gap-2">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
             <p className="text-sm text-gray-500">Uploading…</p>
           </div>
         ) : (
@@ -263,7 +263,7 @@ export default function MediaPage() {
                 <code className="text-xs text-gray-600 flex-1 truncate">{preview.url}</code>
                 <button
                   onClick={() => copyUrl(preview)}
-                  className="flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900 font-medium shrink-0"
+                  className="flex items-center gap-1 text-xs text-[#EC6E1E] hover:text-[#b55517] font-medium shrink-0"
                 >
                   {copiedId === preview.id ? (
                     <><Check className="w-3.5 h-3.5" /> Copied!</>

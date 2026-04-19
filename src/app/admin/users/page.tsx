@@ -12,7 +12,7 @@ interface User {
 
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: "bg-red-100 text-red-700",
-  EDITOR: "bg-blue-100 text-blue-700",
+  EDITOR: "bg-orange-100 text-[#EC6E1E]",
   VIEWER: "bg-gray-100 text-gray-600",
 }
 
@@ -60,7 +60,7 @@ export default function UsersPage() {
         <h1 className="text-2xl font-bold text-gray-900">Users</h1>
         <button
           onClick={() => setShowInvite(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#EC6E1E] text-white text-sm font-medium rounded-lg hover:bg-[#d4601a] transition-colors"
         >
           <UserPlus className="w-4 h-4" />
           Invite user
@@ -75,19 +75,19 @@ export default function UsersPage() {
               value={inviteName}
               onChange={(e) => setInviteName(e.target.value)}
               placeholder="Full name"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             <input
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               type="email"
               placeholder="Email address"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             <select
               value={inviteRole}
               onChange={(e) => setInviteRole(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="EDITOR">Editor</option>
               <option value="VIEWER">Viewer</option>
@@ -97,7 +97,7 @@ export default function UsersPage() {
               <button
                 onClick={invite}
                 disabled={inviting || !inviteEmail || !inviteName}
-                className="flex-1 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 disabled:opacity-50"
+                className="flex-1 py-2 bg-[#EC6E1E] text-white text-sm font-medium rounded-lg hover:bg-[#d4601a] disabled:opacity-50"
               >
                 {inviting ? "Sending…" : "Send invite"}
               </button>

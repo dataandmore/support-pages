@@ -38,7 +38,7 @@ function ToolbarButton({
       title={title}
       className={`p-1.5 rounded transition-colors ${
         active
-          ? "bg-blue-100 text-blue-700"
+          ? "bg-orange-100 text-[#EC6E1E]"
           : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       } disabled:opacity-40 disabled:cursor-not-allowed`}
     >

@@ -134,7 +134,7 @@ export default function EditArticlePage() {
           <button
             onClick={save}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[#EC6E1E] text-white text-sm font-medium rounded-lg hover:bg-[#d4601a] disabled:opacity-50 transition-colors"
           >
             <Save className="w-4 h-4" />
             {saving ? "Saving…" : "Save"}
@@ -153,7 +153,7 @@ export default function EditArticlePage() {
               onClick={() => setActiveLocale(loc)}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeLocale === loc
-                  ? "border-blue-700 text-blue-700"
+                  ? "border-[#EC6E1E] text-[#EC6E1E]"
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -209,7 +209,7 @@ export default function EditArticlePage() {
               }))
             }
             placeholder="Article title…"
-            className="w-full text-2xl font-bold text-gray-900 border-0 border-b border-gray-200 pb-3 mb-6 focus:outline-none focus:border-blue-400 bg-transparent"
+            className="w-full text-2xl font-bold text-gray-900 border-0 border-b border-gray-200 pb-3 mb-6 focus:outline-none focus:border-[#EC6E1E] bg-transparent"
           />
 
           <RichEditor
@@ -236,7 +236,7 @@ export default function EditArticlePage() {
                 }))
               }
               rows={2}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function EditArticlePage() {
                   [activeLocale]: { ...prev[activeLocale], status: e.target.value },
                 }))
               }
-              className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               <option value="DRAFT">Draft</option>
               <option value="AI_DRAFT">AI Draft</option>

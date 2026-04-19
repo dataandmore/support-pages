@@ -15,7 +15,7 @@ export default async function AdminDashboard() {
   const stats = await getStats()
 
   const cards = [
-    { label: "Total translations", value: stats.total, icon: FileText, color: "blue" },
+    { label: "Total translations", value: stats.total, icon: FileText, color: "orange" },
     { label: "Published", value: stats.published, icon: CheckCircle, color: "green" },
     { label: "Drafts", value: stats.drafts, icon: Clock, color: "amber" },
     { label: "AI drafts (needs review)", value: stats.aiDrafts, icon: Languages, color: "purple" },
@@ -40,7 +40,7 @@ export default async function AdminDashboard() {
       <div className="mt-8 bg-white rounded-2xl border border-gray-200 p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Quick actions</h2>
         <div className="flex flex-wrap gap-3">
-          <a href="/admin/articles/new" className="px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors">
+          <a href="/admin/articles/new" className="px-4 py-2 bg-[#EC6E1E] text-white text-sm font-medium rounded-lg hover:bg-[#d4601a] transition-colors">
             + New article
           </a>
           <a href="/admin/videos/upload" className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">

@@ -42,7 +42,7 @@ export function RichEditor({ content, onChange, onImageUpload }: RichEditorProps
     content: content as any,
     editorProps: {
       attributes: {
-        class: "prose prose-blue max-w-none focus:outline-none min-h-[400px] p-6",
+        class: "prose max-w-none focus:outline-none min-h-[400px] p-6",
       },
     },
     onUpdate: ({ editor }) => {

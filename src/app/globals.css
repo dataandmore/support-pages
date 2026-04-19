@@ -44,8 +44,8 @@ body {
 
 .article-content p { margin-bottom: 1.2em; }
 
-.article-content a { color: #1d4ed8; text-decoration: underline; text-underline-offset: 2px; }
-.article-content a:hover { color: #1e3a8a; }
+.article-content a { color: #EC6E1E; text-decoration: underline; text-underline-offset: 2px; }
+.article-content a:hover { color: #d4601a; }
 
 .article-content strong { font-weight: 600; }
 .article-content em { font-style: italic; }
@@ -62,9 +62,9 @@ body {
 .article-content li { margin-bottom: 0.4em; }
 
 .article-content blockquote {
-  border-left: 4px solid #bfdbfe;
+  border-left: 4px solid #fddccc;
   padding: 0.75em 1.25em;
-  background: #eff6ff;
+  background: #fff3ee;
   border-radius: 0 0.5rem 0.5rem 0;
   margin: 1.5em 0;
   color: #374151;
@@ -128,7 +128,7 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
 /* ─── Focus ring ─────────────────────────────────────────────────────────── */
-*:focus-visible { outline: 2px solid #1d4ed8; outline-offset: 2px; }
+*:focus-visible { outline: 2px solid #EC6E1E; outline-offset: 2px; }
 
 /* ─── Animation ──────────────────────────────────────────────────────────── */
 @keyframes fadeIn {

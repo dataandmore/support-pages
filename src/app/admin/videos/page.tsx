@@ -167,7 +167,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
               onClick={() => setActiveLocale(loc)}
               className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                 activeLocale === loc
-                  ? "bg-blue-700 text-white"
+                  ? "bg-[#EC6E1E] text-white"
                   : "text-gray-500 hover:bg-gray-100"
               }`}
             >
@@ -185,7 +185,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
               value={translations[activeLocale].title}
               onChange={(e) => updateField(activeLocale, "title", e.target.value)}
               placeholder={`Title in ${LOCALE_LABELS[activeLocale]}`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
           <div>
@@ -195,7 +195,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
               onChange={(e) => updateField(activeLocale, "description", e.target.value)}
               placeholder={`Description in ${LOCALE_LABELS[activeLocale]}`}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
             />
           </div>
 
@@ -206,7 +206,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
               aria-checked={isGated}
               onClick={() => setIsGated((v) => !v)}
               className={`relative w-10 h-6 rounded-full transition-colors ${
-                isGated ? "bg-blue-700" : "bg-gray-300"
+                isGated ? "bg-[#EC6E1E]" : "bg-gray-300"
               }`}
             >
               <span
@@ -240,7 +240,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 text-sm bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-60 flex items-center gap-2"
+            className="px-4 py-2 text-sm bg-[#EC6E1E] text-white rounded-lg hover:bg-[#d4601a] transition-colors disabled:opacity-60 flex items-center gap-2"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Save
@@ -410,7 +410,7 @@ export default function VideosPage() {
           onClick={() => !selectedFile && fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
             dragOver
-              ? "border-blue-400 bg-blue-50"
+              ? "border-[#EC6E1E] bg-orange-50"
               : selectedFile
               ? "border-green-400 bg-green-50"
               : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
@@ -452,7 +452,7 @@ export default function VideosPage() {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
-                className="bg-blue-700 h-2 rounded-full transition-all duration-300"
+                className="bg-[#EC6E1E] h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
@@ -463,7 +463,7 @@ export default function VideosPage() {
           <div className="flex gap-3 mt-4">
             <button
               onClick={handleUpload}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#EC6E1E] text-white text-sm font-medium rounded-lg hover:bg-[#d4601a] transition-colors"
             >
               <Upload className="w-4 h-4" />
               Upload &amp; transcode

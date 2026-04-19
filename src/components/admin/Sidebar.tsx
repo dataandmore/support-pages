@@ -73,7 +73,7 @@ export function Sidebar({ role, userEmail, userName }: SidebarProps) {
             href={item.href}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
               isActive(item.href, item.exact)
-                ? "bg-blue-50 text-blue-700 font-medium"
+                ? "bg-orange-50 text-[#EC6E1E] font-medium"
                 : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
             title={collapsed ? item.label : undefined}
@@ -92,7 +92,7 @@ export function Sidebar({ role, userEmail, userName }: SidebarProps) {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   isActive(item.href)
-                    ? "bg-blue-50 text-blue-700 font-medium"
+                    ? "bg-orange-50 text-[#EC6E1E] font-medium"
                     : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
                 title={collapsed ? item.label : undefined}

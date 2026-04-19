@@ -106,7 +106,7 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={() => fileInputRef.current?.click()}
-          className="mx-6 mt-4 mb-2 border border-dashed border-gray-300 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors shrink-0"
+          className="mx-6 mt-4 mb-2 border border-dashed border-gray-300 rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-[#EC6E1E] hover:bg-orange-50 transition-colors shrink-0"
         >
           <input
             ref={fileInputRef}
@@ -119,7 +119,7 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
             }}
           />
           {uploading ? (
-            <Loader2 className="w-6 h-6 animate-spin text-blue-500 shrink-0" />
+            <Loader2 className="w-6 h-6 animate-spin text-orange-500 shrink-0" />
           ) : (
             <Upload className="w-6 h-6 text-gray-400 shrink-0" />
           )}
@@ -147,7 +147,7 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
                   onClick={() => setSelectedId(item.id === selectedId ? null : item.id)}
                   className={`relative aspect-square rounded-lg overflow-hidden bg-gray-100 ring-2 transition-all ${
                     selectedId === item.id
-                      ? "ring-blue-500"
+                      ? "ring-orange-500"
                       : "ring-transparent hover:ring-gray-300"
                   }`}
                 >
@@ -157,8 +157,8 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
                     className="w-full h-full object-cover"
                   />
                   {selectedId === item.id && (
-                    <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="absolute inset-0 bg-orange-500/20 flex items-center justify-center">
+                      <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
                         <Check className="w-4 h-4 text-white" />
                       </div>
                     </div>
@@ -190,7 +190,7 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
             <button
               onClick={handleInsert}
               disabled={!selectedId}
-              className="px-4 py-2 text-sm bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-40"
+              className="px-4 py-2 text-sm bg-[#EC6E1E] text-white rounded-lg hover:bg-[#d4601a] transition-colors disabled:opacity-40"
             >
               Insert image
             </button>

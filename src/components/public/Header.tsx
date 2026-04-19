@@ -76,7 +76,7 @@ export function Header({ locale, hideSearch = false }: HeaderProps) {
               <Link
                 href="/admin"
                 onClick={() => setMobileOpen(false)}
-                className="text-sm text-blue-700 font-medium hover:underline"
+                className="text-sm text-[#EC6E1E] font-medium hover:underline"
               >
                 Sign in
               </Link>

@@ -4,7 +4,7 @@ import { Plus, Edit } from "lucide-react"
 
 const statusColors: Record<string, string> = {
   PUBLISHED: "bg-green-100 text-green-700",
-  IN_REVIEW: "bg-blue-100 text-blue-700",
+  IN_REVIEW: "bg-orange-100 text-[#EC6E1E]",
   AI_DRAFT: "bg-purple-100 text-purple-700",
   DRAFT: "bg-gray-100 text-gray-600",
 }
@@ -24,7 +24,7 @@ export default async function ArticlesPage() {
         <h1 className="text-2xl font-bold text-gray-900">Articles</h1>
         <Link
           href="/admin/articles/new"
-          className="flex items-center gap-2 px-4 py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#EC6E1E] text-white text-sm font-medium rounded-lg hover:bg-[#d4601a] transition-colors"
         >
           <Plus className="w-4 h-4" />
           New article

@@ -40,14 +40,14 @@ export default async function SearchPage({ params, searchParams }: Props) {
             <Link
               key={result.id}
               href={`/${validLocale}/knowledge/${result.categorySlug}/${result.slug}`}
-              className="block bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all"
+              className="block bg-white rounded-xl border border-gray-200 p-5 hover:border-orange-300 hover:shadow-sm transition-all"
             >
               {result.categoryName && (
-                <p className="text-xs text-blue-600 font-medium mb-1 uppercase tracking-wide">
+                <p className="text-xs text-[#EC6E1E] font-medium mb-1 uppercase tracking-wide">
                   {result.categoryName}
                 </p>
               )}
-              <h3 className="font-semibold text-gray-900 hover:text-blue-700">
+              <h3 className="font-semibold text-gray-900 hover:text-[#EC6E1E]">
                 {result.title}
               </h3>
               {result.excerpt && (
@@ -59,7 +59,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
           {query && results.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">No results found for &ldquo;{query}&rdquo;</p>
-              <Link href={`/${validLocale}`} className="text-blue-700 hover:underline text-sm mt-2 block">
+              <Link href={`/${validLocale}`} className="text-[#EC6E1E] hover:underline text-sm mt-2 block">
                 ← Back to all categories
               </Link>
             </div>
