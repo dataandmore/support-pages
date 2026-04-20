@@ -6,7 +6,7 @@ interface HubspotPreviewModalProps {
 }
 
 export function HubspotPreviewModal({ slug, onClose }: HubspotPreviewModalProps) {
-  const localPath = `/hubspot-archive/${slug}.html`
+  const localPath = `/api/hubspot-archive/${slug}`
   const liveUrl = `https://support.dataandmore.com/en/knowledge/${slug}`
 
   return (
@@ -29,7 +29,7 @@ export function HubspotPreviewModal({ slug, onClose }: HubspotPreviewModalProps)
             Open live original ↗
           </a>
           <a
-            href={localPath}
+            href={`/hubspot-archive/${slug}.html`}
             download={`${slug}.html`}
             className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors font-medium"
           >

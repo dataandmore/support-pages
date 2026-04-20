@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Pin, PinOff } from "lucide-react"
+import { Pin, PinOff, ExternalLink } from "lucide-react"
 import { QuickLoginModal } from "./QuickLoginModal"
 import { HubspotPreviewModal } from "./HubspotPreviewModal"
 
@@ -84,6 +84,18 @@ export function ArticleAdminBar({
           )}
           {pinned ? "Pinned" : "Pin"}
         </button>
+
+        {/* Open original HubSpot article in new tab */}
+        <a
+          href={`https://support.dataandmore.com/en/knowledge/${articleSlug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open original in HubSpot"
+          className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-gray-200 bg-white text-gray-500 hover:border-[#EC6E1E] hover:text-[#EC6E1E] transition-colors shadow-sm"
+        >
+          <ExternalLink size={11} className="shrink-0" />
+          Original
+        </a>
 
         {hasArchive && (
           <button

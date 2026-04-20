@@ -45,9 +45,11 @@ export function RichEditor({ content, onChange, onImageUpload, readOnly = false 
     content: content as any,
     editorProps: {
       attributes: {
+        // Use article-content so the editor is true WYSIWYG —
+        // headings, code blocks, tables look exactly like the published page.
         class: readOnly
-          ? "prose prose-gray max-w-none p-0 focus:outline-none"
-          : "prose prose-gray max-w-none focus:outline-none min-h-[400px] p-6",
+          ? "article-content p-0 focus:outline-none"
+          : "article-content focus:outline-none min-h-[400px] p-6",
       },
     },
     onUpdate: ({ editor }) => {

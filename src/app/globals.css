@@ -104,21 +104,38 @@ body {
   border-collapse: collapse;
   margin: 1.5em 0;
   font-size: 0.9375rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   overflow: hidden;
+  display: table;
 }
-.article-content th {
-  background: #f9fafb;
-  font-weight: 600;
+/* Every cell gets a full border so columns are clearly separated */
+.article-content th,
+.article-content td {
+  padding: 0.6em 1em;
+  border: 1px solid #e5e7eb;
   text-align: left;
-  padding: 0.65em 1em;
-  border-bottom: 2px solid #e5e7eb;
+  vertical-align: top;
+}
+/* Explicit <th> elements */
+.article-content th {
+  background: #f3f4f6;
+  font-weight: 600;
   color: #374151;
   font-size: 0.875rem;
 }
-.article-content td { padding: 0.65em 1em; border-bottom: 1px solid #f3f4f6; }
-.article-content tr:last-child td { border-bottom: none; }
+/* HubSpot uses <td> everywhere — style the first row of any table as a header */
+.article-content table tr:first-child td {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  border-bottom: 2px solid #d1d5db;
+}
+/* Zebra-stripe body rows for readability */
+.article-content table tbody tr:nth-child(even) td {
+  background: #f9fafb;
+}
 .article-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 2em 0; }
 
 /* ─── Video embed (HubSpot, Synthesia, YouTube, …) ───────────────────────── */
@@ -140,6 +157,17 @@ body {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+/* ─── Tiptap editor WYSIWYG — ProseMirror inherits article-content styles ── */
+/* These rules make the editor cursor / placeholder feel native                */
+.ProseMirror { outline: none; cursor: text; }
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
 
 /* ─── Custom scrollbar ────────────────────────────────────────────────────── */

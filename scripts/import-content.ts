@@ -268,6 +268,43 @@ function parseBlock($: cheerio.CheerioAPI, elements: cheerio.Cheerio<AnyNode>): 
         break
       }
 
+      // ── Tables ────────────────────────────────────────────────────────────
+      // HubSpot uses <table><tbody><tr><td|th> (sometimes with thead).
+      // Tiptap requires: table → tableRow → tableHeader|tableCell → paragraph.
+      case "table": {
+        const rows: TiptapNode[] = []
+        // Select all rows regardless of thead/tbody/tfoot nesting
+        $el.find("tr").each((_j, tr) => {
+          const cells: TiptapNode[] = []
+          $(tr).children("th, td").each((_k, cell) => {
+            const $cell = $(cell)
+            const isHeader = (cell as DomElement).tagName.toLowerCase() === "th"
+            const colspan = parseInt($cell.attr("colspan") ?? "1", 10) || 1
+            const rowspan = parseInt($cell.attr("rowspan") ?? "1", 10) || 1
+
+            // If the cell contains block-level children, parse them as blocks;
+            // otherwise wrap the inline content in a paragraph.
+            const hasBlocks = $cell.children("p, ul, ol, h1, h2, h3, h4, blockquote, pre, table").length > 0
+            let cellContent: TiptapNode[]
+            if (hasBlocks) {
+              cellContent = parseBlock($, $cell.children())
+            } else {
+              const inline = parseInline($, cell)
+              cellContent = [{ type: "paragraph", content: inline.length > 0 ? inline : [{ type: "text", text: "" }] }]
+            }
+
+            cells.push({
+              type: isHeader ? "tableHeader" : "tableCell",
+              attrs: { colspan, rowspan, colwidth: null },
+              content: cellContent,
+            })
+          })
+          if (cells.length > 0) rows.push({ type: "tableRow", content: cells })
+        })
+        if (rows.length > 0) nodes.push({ type: "table", content: rows })
+        break
+      }
+
       // ── Code ──────────────────────────────────────────────────────────────
       case "pre": {
         const codeEl = $el.find("code")

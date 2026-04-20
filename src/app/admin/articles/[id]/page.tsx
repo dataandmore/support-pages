@@ -267,13 +267,13 @@ export default function EditArticlePage() {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight mb-6 pb-6 border-b border-gray-100">
                 {t.title || <span className="text-gray-300 italic">No title</span>}
               </h1>
-              <div className="prose prose-gray max-w-none">
-                <RichEditor
-                  key={`preview-${activeLocale}`}
-                  content={t.content}
-                  readOnly
-                />
-              </div>
+              {/* RichEditor readOnly uses article-content CSS — same look as public page,
+                  but runs entirely client-side so no Node.js / happy-dom needed */}
+              <RichEditor
+                key={`preview-${activeLocale}`}
+                content={t.content}
+                readOnly
+              />
             </div>
           </div>
         </div>
