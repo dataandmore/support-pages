@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #111827;
+  background: #f9fafb;
+}
+
+/* ─── Article prose styles ──────────────────────────────────────────────── */
+
+.article-content {
+  line-height: 1.75;
+  color: #1f2937;
+  font-size: 1rem;
+}
+
+.article-content h1,
+.article-content h2,
+.article-content h3,
+.article-content h4 {
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.3;
+  margin-top: 2em;
+  margin-bottom: 0.6em;
+}
+
+.article-content h1 { font-size: 1.875rem; }
+.article-content h2 {
+  font-size: 1.375rem;
+  padding-bottom: 0.4em;
+  border-bottom: 1px solid #e5e7eb;
+}
+.article-content h3 { font-size: 1.125rem; }
+.article-content h4 { font-size: 1rem; }
+
+.article-content p { margin-bottom: 1.2em; }
+
+.article-content a { color: #EC6E1E; text-decoration: underline; text-underline-offset: 2px; }
+.article-content a:hover { color: #d4601a; }
+
+.article-content strong { font-weight: 600; }
+.article-content em { font-style: italic; }
+.article-content u { text-decoration: underline; text-underline-offset: 2px; }
+.article-content mark { background: #fef08a; padding: 0.1em 0.25em; border-radius: 0.2em; }
+
+.article-content ul,
+.article-content ol {
+  margin-bottom: 1.2em;
+  padding-left: 1.5em;
+}
+.article-content ul { list-style-type: disc; }
+.article-content ol { list-style-type: decimal; }
+.article-content li { margin-bottom: 0.4em; }
+
+.article-content blockquote {
+  border-left: 4px solid #fddccc;
+  padding: 0.75em 1.25em;
+  background: #fff3ee;
+  border-radius: 0 0.5rem 0.5rem 0;
+  margin: 1.5em 0;
+  color: #374151;
+}
+
+.article-content code:not(pre code) {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.3em;
+  padding: 0.1em 0.45em;
+  font-size: 0.875em;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.article-content pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25em 1.5em;
+  overflow-x: auto;
+  margin: 1.5em 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.article-content pre code { background: none; border: none; padding: 0; }
+
+.article-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  margin: 1.5em 0;
+}
+
+.article-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.9375rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  display: table;
+}
+/* Every cell gets a full border so columns are clearly separated */
+.article-content th,
+.article-content td {
+  padding: 0.6em 1em;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: top;
+}
+/* Explicit <th> elements */
+.article-content th {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}
+/* HubSpot uses <td> everywhere — style the first row of any table as a header */
+.article-content table tr:first-child td {
+  background: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  border-bottom: 2px solid #d1d5db;
+}
+/* Zebra-stripe body rows for readability */
+.article-content table tbody tr:nth-child(even) td {
+  background: #f9fafb;
+}
+.article-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 2em 0; }
+
+/* ─── Video embed (HubSpot, Synthesia, YouTube, …) ───────────────────────── */
+.article-content .video-embed-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  margin: 1.5em 0;
+  background: #000;
+}
+.article-content .video-embed-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ─── Tiptap editor WYSIWYG — ProseMirror inherits article-content styles ── */
+/* These rules make the editor cursor / placeholder feel native                */
+.ProseMirror { outline: none; cursor: text; }
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ─── Custom scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* ─── Focus ring ─────────────────────────────────────────────────────────── */
+*:focus-visible { outline: 2px solid #EC6E1E; outline-offset: 2px; }
+
+/* ─── Animation ──────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeIn 0.2s ease-out both; }

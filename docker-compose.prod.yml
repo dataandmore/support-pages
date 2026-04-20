@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: support_portal
+      POSTGRES_USER: support_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U support_user -d support_portal && psql -U support_user -d support_portal -c 'SELECT 1' > /dev/null 2>&1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: support-portal:latest
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://support_user:${POSTGRES_PASSWORD}@db:5432/support_portal
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      # Set in .env.prod — e.g. https://super.support.dataandmore.com (staging)
+      # or https://support.dataandmore.com (production)
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      POSTMARK_API_KEY: ${POSTMARK_API_KEY}
+      # Optional: override default From address for Postmark emails
+      POSTMARK_FROM_EMAIL: ${POSTMARK_FROM_EMAIL:-support@dataandmore.com}
+    volumes:
+      # Persist uploads (videos, images) outside the container
+      - ./uploads:/app/uploads
+    ports:
+      # Nginx proxies to 3000; bind to localhost only so the port is not
+      # exposed directly to the internet.
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
