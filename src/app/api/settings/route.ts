@@ -41,15 +41,16 @@ export async function PATCH(req: NextRequest) {
 
   const trimmed = value.trim()
 
+  // Apply to the running process immediately
+  process.env[key] = trimmed
+
+  // Persist to .env.local for dev restarts (best-effort, skipped in Docker)
   try {
     writeEnvKey(key, trimmed)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to write .env.local"
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch {
+    // In production containers the filesystem may be read-only — that's fine,
+    // the in-memory assignment above is what matters.
   }
-
-  // Apply immediately so the key works without a restart
-  process.env[key] = trimmed
 
   return NextResponse.json({ success: true })
 }
