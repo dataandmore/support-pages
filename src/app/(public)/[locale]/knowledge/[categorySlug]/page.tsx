@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { isValidLocale, defaultLocale } from "@/lib/i18n"
-import { Header } from "@/components/public/Header"
-import { Footer } from "@/components/public/Footer"
+import { PublicShell } from "@/components/public/PublicShell"
 import { Breadcrumb } from "@/components/public/Breadcrumb"
 import { ArticleCard } from "@/components/public/ArticleCard"
 import type { Metadata } from "next"
@@ -14,6 +13,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const validLocale = isValidLocale(locale) ? locale : defaultLocale
   const category = await prisma.category.findUnique({
     where: { slug: categorySlug },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     include: { translations: { where: { locale: validLocale as any } } },
   })
   const name = category?.translations[0]?.name ?? categorySlug
@@ -27,16 +27,19 @@ export default async function CategoryPage({ params }: Props) {
   const category = await prisma.category.findUnique({
     where: { slug: categorySlug },
     include: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       translations: { where: { locale: validLocale as any } },
       articles: {
         where: {
           translations: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             some: { locale: validLocale as any, status: "PUBLISHED" },
           },
         },
         orderBy: { position: "asc" },
         include: {
           translations: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             where: { locale: validLocale as any, status: "PUBLISHED" },
           },
         },
@@ -49,8 +52,7 @@ export default async function CategoryPage({ params }: Props) {
   const translation = category.translations[0]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header locale={validLocale} />
+    <PublicShell locale={validLocale}>
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
         <Breadcrumb
           crumbs={[
@@ -59,16 +61,13 @@ export default async function CategoryPage({ params }: Props) {
           ]}
         />
 
-        <div className="flex items-center gap-3 mb-8">
-          <span className="text-4xl">{category.icon ?? "📄"}</span>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {translation?.name ?? categorySlug}
-            </h1>
-            {translation?.description && (
-              <p className="text-gray-500 mt-1">{translation.description}</p>
-            )}
-          </div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-[#2A2A2C]">
+            {translation?.name ?? categorySlug}
+          </h1>
+          {translation?.description && (
+            <p className="text-gray-500 mt-1">{translation.description}</p>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -86,7 +85,6 @@ export default async function CategoryPage({ params }: Props) {
           )}
         </div>
       </main>
-      <Footer />
-    </div>
+    </PublicShell>
   )
 }

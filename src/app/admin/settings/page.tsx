@@ -2,6 +2,9 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { HubSpotKeyForm } from "@/components/admin/HubSpotKeyForm"
+import { AnthropicKeyForm } from "@/components/admin/AnthropicKeyForm"
+import { SynthesiaKeyForm } from "@/components/admin/SynthesiaKeyForm"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Settings" }
@@ -104,6 +107,12 @@ export default async function SettingsPage() {
       envKey: "ANTHROPIC_API_KEY",
     },
     {
+      label: "Synthesia",
+      description: "AI video creation — import videos to the video library",
+      status: envStatus("SYNTHESIA_API_KEY"),
+      envKey: "SYNTHESIA_API_KEY",
+    },
+    {
       label: "HubSpot (legacy, read-only)",
       description: "Content migration scraper source",
       status: envStatus("HUBSPOT_API_KEY"),
@@ -178,6 +187,18 @@ export default async function SettingsPage() {
           {services.map((svc) => (
             <ServiceRow key={svc.envKey} {...svc} />
           ))}
+        </div>
+      </section>
+
+      {/* API key inputs */}
+      <section className="mb-6">
+        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3">
+          Integrations
+        </h2>
+        <div className="space-y-4">
+          <AnthropicKeyForm isConfigured={envStatus("ANTHROPIC_API_KEY") === "ok"} />
+          <SynthesiaKeyForm isConfigured={envStatus("SYNTHESIA_API_KEY") === "ok"} />
+          <HubSpotKeyForm isConfigured={envStatus("HUBSPOT_API_KEY") === "ok"} />
         </div>
       </section>
 

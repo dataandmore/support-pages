@@ -121,6 +121,27 @@ body {
 .article-content tr:last-child td { border-bottom: none; }
 .article-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 2em 0; }
 
+/* ─── Video embed (HubSpot, Synthesia, YouTube, …) ───────────────────────── */
+.article-content .video-embed-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  margin: 1.5em 0;
+  background: #000;
+}
+.article-content .video-embed-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 /* ─── Custom scrollbar ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

@@ -31,6 +31,7 @@ const UpdateTranslationSchema = z.object({
 const UpdateArticleSchema = z.object({
   categoryId: z.string().optional().nullable(),
   isGated: z.boolean().optional(),
+  pinned: z.boolean().optional(),
   position: z.number().optional(),
   translation: UpdateTranslationSchema.optional(),
 })

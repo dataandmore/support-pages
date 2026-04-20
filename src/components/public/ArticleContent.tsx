@@ -9,6 +9,7 @@ import { TableCell as TiptapTableCell } from "@tiptap/extension-table"
 import { TableHeader as TiptapTableHeader } from "@tiptap/extension-table"
 import { TextAlign as TiptapTextAlign } from "@tiptap/extension-text-align"
 import { Highlight as TiptapHighlight } from "@tiptap/extension-highlight"
+import { VideoEmbed } from "@/lib/tiptap-video-embed"
 
 const extensions = [
   StarterKit,
@@ -21,6 +22,7 @@ const extensions = [
   TiptapTableHeader,
   TiptapTextAlign.configure({ types: ["heading", "paragraph"] }),
   TiptapHighlight,
+  VideoEmbed,
 ]
 
 interface ArticleContentProps {
@@ -34,6 +36,10 @@ export function ArticleContent({ content }: ArticleContentProps) {
   } catch {
     html = "<p>Content unavailable.</p>"
   }
+
+  // Strip a leading <h1> if the article starts with one (it duplicates the
+  // <header> title already shown above the content block).
+  html = html.replace(/^\s*<h1[^>]*>[\s\S]*?<\/h1>\s*/, "")
 
   return (
     <div

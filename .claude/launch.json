@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3040
+    },
+    {
+      "name": "PostgreSQL (Docker)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "db"],
+      "port": 5432
+    }
+  ]
+}

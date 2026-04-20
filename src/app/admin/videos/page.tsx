@@ -14,6 +14,7 @@ import {
   Play,
   X,
 } from "lucide-react"
+import { SynthesiaImportPanel } from "@/components/admin/SynthesiaImportPanel"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -395,6 +396,9 @@ export default function VideosPage() {
           {videos.length} video{videos.length !== 1 ? "s" : ""}
         </span>
       </div>
+
+      {/* Synthesia import */}
+      <SynthesiaImportPanel />
 
       {/* Upload zone */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">

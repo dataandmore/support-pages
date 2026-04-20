@@ -1,8 +1,9 @@
+import Link from "next/link"
+import { Pin } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { isValidLocale, defaultLocale } from "@/lib/i18n"
 import { CategoryCard } from "@/components/public/CategoryCard"
-import { Header } from "@/components/public/Header"
-import { Footer } from "@/components/public/Footer"
+import { PublicShell } from "@/components/public/PublicShell"
 import { HeroSearch } from "@/components/public/HeroSearch"
 import { HeroVideo } from "@/components/public/HeroVideo"
 import type { Metadata } from "next"
@@ -20,16 +21,29 @@ export default async function HomePage({
   const { locale } = await params
   const validLocale = isValidLocale(locale) ? locale : defaultLocale
 
-  const categories = await prisma.category.findMany({
-    orderBy: { position: "asc" },
-    include: {
-      translations: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        where: { locale: validLocale as any },
+  const [categories, pinnedArticles] = await Promise.all([
+    prisma.category.findMany({
+      orderBy: { position: "asc" },
+      include: {
+        translations: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          where: { locale: validLocale as any },
+        },
+        _count: { select: { articles: true } },
       },
-      _count: { select: { articles: true } },
-    },
-  })
+    }),
+    prisma.article.findMany({
+      where: { pinned: true },
+      orderBy: { updatedAt: "desc" },
+      include: {
+        translations: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          where: { locale: { in: [validLocale, "en"] } as any },
+        },
+        category: true,
+      },
+    }),
+  ])
 
   const heroText: Record<string, string> = {
     en: "How can we help?",
@@ -52,9 +66,15 @@ export default async function HomePage({
     de: "Themen durchsuchen",
   }
 
+  const featuredLabel: Record<string, string> = {
+    en: "Featured articles",
+    da: "Udvalgte artikler",
+    sv: "Utvalda artiklar",
+    de: "Empfohlene Artikel",
+  }
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f5f6f8" }}>
-      <Header locale={validLocale} hideSearch />
+    <PublicShell locale={validLocale} hideSearch>
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden" style={{ background: "#1a1a2c" }}>
@@ -66,7 +86,7 @@ export default async function HomePage({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(135deg, rgba(26,26,44,0.95) 0%, rgba(42,28,14,0.90) 100%)",
+              "linear-gradient(135deg, rgba(26,26,44,0.58) 0%, rgba(42,28,14,0.50) 100%)",
           }}
         />
 
@@ -92,11 +112,11 @@ export default async function HomePage({
           }}
         />
 
-        <div className="relative z-10 max-w-2xl mx-auto px-4 text-center py-24 sm:py-32">
+        <div className="relative z-10 max-w-2xl mx-auto px-4 text-center py-20 sm:py-28">
           <p className="text-[#EC6E1E] text-sm font-semibold uppercase tracking-widest mb-5">
             Data &amp; More Support
           </p>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-5 tracking-tight leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-5 tracking-tight leading-tight">
             {heroText[validLocale] ?? heroText.en}
           </h1>
           <p className="text-white/50 mb-10 text-base sm:text-lg">
@@ -106,14 +126,54 @@ export default async function HomePage({
         </div>
       </section>
 
+      {/* ── Pinned / Featured articles ── */}
+      {pinnedArticles.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 pt-10 pb-2 w-full">
+          <div className="flex items-center gap-2 mb-5">
+            <Pin size={13} className="text-[#EC6E1E] shrink-0" strokeWidth={2.5} />
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              {featuredLabel[validLocale] ?? featuredLabel.en}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {pinnedArticles.map((article) => {
+              const t =
+                article.translations.find((tr) => tr.locale === validLocale) ??
+                article.translations.find((tr) => tr.locale === "en")
+              if (!t) return null
+              const href = article.category
+                ? `/${validLocale}/knowledge/${article.category.slug}/${article.slug}`
+                : `/${validLocale}/knowledge/${article.slug}`
+              return (
+                <Link
+                  key={article.id}
+                  href={href}
+                  className="group block bg-white rounded-2xl border border-orange-100 p-5 hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
+                >
+                  <h3 className="font-semibold text-[#2A2A2C] group-hover:text-[#EC6E1E] transition-colors text-sm leading-snug mb-1.5">
+                    {t.title}
+                  </h3>
+                  {t.excerpt && (
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                      {t.excerpt}
+                    </p>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ── Category grid ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex-1 w-full">
+      <section className="px-4 sm:px-6 lg:px-8 py-12 flex-1 w-full">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-7">
           {categoryLabel[validLocale] ?? categoryLabel.en}
         </p>
 
         {categories.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
             {categories.map((cat) => (
               <CategoryCard key={cat.id} category={cat} locale={validLocale} />
             ))}
@@ -125,7 +185,6 @@ export default async function HomePage({
         )}
       </section>
 
-      <Footer />
-    </div>
+    </PublicShell>
   )
 }

@@ -1,9 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { isValidLocale, defaultLocale } from "@/lib/i18n"
-import { Header } from "@/components/public/Header"
-import { Footer } from "@/components/public/Footer"
+import { PublicShell } from "@/components/public/PublicShell"
 import { VideoPlayer } from "@/components/public/VideoPlayer"
-import { Lock, Clock } from "lucide-react"
 import { auth } from "@/lib/auth"
 import type { Metadata } from "next"
 
@@ -12,9 +10,6 @@ export const metadata: Metadata = {
   description: "Watch tutorials and product walkthroughs from Data & More.",
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 function formatDuration(seconds: number | null): string {
   if (!seconds) return ""
   const m = Math.floor(seconds / 60)
@@ -22,9 +17,6 @@ function formatDuration(seconds: number | null): string {
   return `${m}:${String(s).padStart(2, "0")}`
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
 export default async function VideosPage({
   params,
 }: {
@@ -61,11 +53,9 @@ export default async function VideosPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header locale={validLocale} />
-
+    <PublicShell locale={validLocale}>
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">
+        <h1 className="text-2xl font-bold text-[#2A2A2C] mb-8">
           {pageTitle[validLocale] ?? pageTitle.en}
         </h1>
 
@@ -79,8 +69,6 @@ export default async function VideosPage({
               const translation = video.translations[0]
               const title = translation?.title || video.originalFilename
               const description = translation?.description ?? null
-
-              // Gated + unauthenticated: show locked card without player
               const locked = video.isGated && !isAuthenticated
 
               const hlsUrl = video.hlsPath
@@ -110,7 +98,7 @@ export default async function VideosPage({
                         )}
                         {locked && (
                           <div className="relative z-10 flex flex-col items-center gap-2">
-                            <Lock className="w-8 h-8 text-white/80" />
+                            <span className="text-white/80 text-sm font-medium">Members only</span>
                             <a
                               href={`/${validLocale}/login?callbackUrl=/${validLocale}/videos`}
                               className="text-xs bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-1.5 rounded-full transition-colors"
@@ -132,7 +120,7 @@ export default async function VideosPage({
                         {title}
                       </h2>
                       {video.isGated && (
-                        <span className="shrink-0 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
+                        <span className="shrink-0 text-xs bg-orange-100 text-[#EC6E1E] px-2 py-0.5 rounded-full border border-orange-200">
                           Members
                         </span>
                       )}
@@ -141,10 +129,9 @@ export default async function VideosPage({
                       <p className="text-xs text-gray-500 line-clamp-2 mt-1">{description}</p>
                     )}
                     {video.duration && (
-                      <div className="flex items-center gap-1 mt-auto pt-3 text-xs text-gray-400">
-                        <Clock className="w-3.5 h-3.5" />
+                      <p className="mt-auto pt-3 text-xs text-gray-400 tabular-nums">
                         {formatDuration(video.duration)}
-                      </div>
+                      </p>
                     )}
                   </div>
                 </article>
@@ -153,8 +140,6 @@ export default async function VideosPage({
           </div>
         )}
       </main>
-
-      <Footer />
-    </div>
+    </PublicShell>
   )
 }

@@ -19,8 +19,10 @@ const prisma = createPrisma()
 
 const SCRAPED_DIR = path.join(process.cwd(), "scripts", "scraped")
 
+// Pass --update flag to overwrite existing articles (default: skip)
+const UPSERT_MODE = process.argv.includes("--update")
+
 // ─── Category slug mapping (scraped → DB) ─────────────────────────────────────
-// Maps HubSpot category slugs to the new DB category slugs
 const CATEGORY_SLUG_MAP: Record<string, string> = {
   "organisational-roll-out": "organisation-rollout",
   "it-onboarding": "it-setup-onboarding",
@@ -46,7 +48,6 @@ interface ScrapedArticle {
   sourceUrl: string
 }
 
-// Tiptap node types (simplified)
 interface TiptapMark {
   type: string
   attrs?: Record<string, unknown>
@@ -89,7 +90,34 @@ async function uniqueSlug(base: string, existingSlugs: Set<string>): Promise<str
 // ─── HTML → Tiptap conversion ─────────────────────────────────────────────────
 
 /**
+ * Resolve image src — HubSpot sometimes lazy-loads with data-src / data-lazy-src.
+ */
+function resolveImgSrc($el: cheerio.Cheerio<AnyNode>): string {
+  return (
+    $el.attr("src") ??
+    $el.attr("data-src") ??
+    $el.attr("data-lazy-src") ??
+    $el.attr("data-original") ??
+    ""
+  )
+}
+
+/**
+ * Resolve video embed src — HubSpot uses data-hsv-src for lazy-loaded iframes.
+ */
+function resolveIframeSrc($el: cheerio.Cheerio<AnyNode>): string {
+  return (
+    $el.attr("src") ??
+    $el.attr("data-hsv-src") ??
+    $el.attr("data-src") ??
+    ""
+  )
+}
+
+/**
  * Parse inline children of an element into Tiptap text/mark nodes.
+ * NOTE: <img> inside inline context is intentionally excluded here —
+ * the block-level <p> parser extracts images before calling this.
  */
 function parseInline(
   $: cheerio.CheerioAPI,
@@ -103,17 +131,18 @@ function parseInline(
     .each((_i, child) => {
       if (child.type === "text") {
         const text = (child as DomText).data ?? ""
-        if (!text) return
+        if (!text || !text.trim()) return
         const node: TiptapNode = { type: "text", text }
-        if (inheritedMarks.length > 0) {
-          node.marks = [...inheritedMarks]
-        }
+        if (inheritedMarks.length > 0) node.marks = [...inheritedMarks]
         nodes.push(node)
         return
       }
 
       if (child.type !== "tag") return
       const tag = (child as DomElement).tagName.toLowerCase()
+
+      // Skip images — handled at block level
+      if (tag === "img") return
 
       let marks: TiptapMark[] = [...inheritedMarks]
 
@@ -138,11 +167,9 @@ function parseInline(
           marks = [...marks, { type: "code" }]
           break
         default:
-          // For unknown inline tags, recurse without adding marks
           break
       }
 
-      // Recurse into the child element
       const children = parseInline($, child, marks)
       nodes.push(...children)
     })
@@ -158,11 +185,8 @@ function parseBlock($: cheerio.CheerioAPI, elements: cheerio.Cheerio<AnyNode>): 
 
   elements.each((_i, el) => {
     if (el.type === "text") {
-      // Loose text nodes at block level — wrap in paragraph if non-empty
       const text = (el as DomText).data?.trim() ?? ""
-      if (text) {
-        nodes.push({ type: "paragraph", content: [{ type: "text", text }] })
-      }
+      if (text) nodes.push({ type: "paragraph", content: [{ type: "text", text }] })
       return
     }
 
@@ -172,30 +196,47 @@ function parseBlock($: cheerio.CheerioAPI, elements: cheerio.Cheerio<AnyNode>): 
     const $el = $(el)
 
     switch (tag) {
+      // ── Headings ────────────────────────────────────────────────────────
       case "h1":
       case "h2":
       case "h3":
       case "h4": {
         const level = parseInt(tag[1], 10)
         const content = parseInline($, el)
-        if (content.length > 0) {
-          nodes.push({ type: "heading", attrs: { level }, content })
-        }
+        if (content.length > 0) nodes.push({ type: "heading", attrs: { level }, content })
         break
       }
 
+      // ── Paragraphs (may contain images!) ────────────────────────────────
       case "p": {
-        const content = parseInline($, el)
-        // Only emit a paragraph if there's actual content
-        if (content.length > 0) {
-          nodes.push({ type: "paragraph", content })
+        const imgs = $el.find("img")
+
+        if (imgs.length > 0) {
+          // Extract images as block nodes; remaining text as a paragraph
+          const textContent = parseInline($, el) // skips <img> by design
+          if (textContent.length > 0) nodes.push({ type: "paragraph", content: textContent })
+          imgs.each((_j, img) => {
+            const src = resolveImgSrc($(img))
+            if (src) {
+              nodes.push({
+                type: "image",
+                attrs: {
+                  src,
+                  alt: $(img).attr("alt") ?? "",
+                  title: $(img).attr("title") ?? null,
+                },
+              })
+            }
+          })
         } else {
-          // Preserve empty paragraphs as a blank paragraph node
-          nodes.push({ type: "paragraph" })
+          // Normal paragraph
+          const content = parseInline($, el)
+          nodes.push(content.length > 0 ? { type: "paragraph", content } : { type: "paragraph" })
         }
         break
       }
 
+      // ── Lists ────────────────────────────────────────────────────────────
       case "ul": {
         const items = $el
           .children("li")
@@ -204,9 +245,7 @@ function parseBlock($: cheerio.CheerioAPI, elements: cheerio.Cheerio<AnyNode>): 
             content: [{ type: "paragraph", content: parseInline($, li) }],
           }))
           .get()
-        if (items.length > 0) {
-          nodes.push({ type: "bulletList", content: items })
-        }
+        if (items.length > 0) nodes.push({ type: "bulletList", content: items })
         break
       }
 
@@ -218,54 +257,80 @@ function parseBlock($: cheerio.CheerioAPI, elements: cheerio.Cheerio<AnyNode>): 
             content: [{ type: "paragraph", content: parseInline($, li) }],
           }))
           .get()
-        if (items.length > 0) {
-          nodes.push({ type: "orderedList", content: items })
-        }
+        if (items.length > 0) nodes.push({ type: "orderedList", content: items })
         break
       }
 
+      // ── Block quotes ─────────────────────────────────────────────────────
       case "blockquote": {
         const inner = parseBlock($, $el.children())
-        if (inner.length > 0) {
-          nodes.push({ type: "blockquote", content: inner })
-        }
+        if (inner.length > 0) nodes.push({ type: "blockquote", content: inner })
         break
       }
 
+      // ── Code ──────────────────────────────────────────────────────────────
       case "pre": {
-        // Check for nested <code>
         const codeEl = $el.find("code")
         const text = codeEl.length ? codeEl.text() : $el.text()
-        nodes.push({
-          type: "codeBlock",
-          content: [{ type: "text", text }],
-        })
+        nodes.push({ type: "codeBlock", content: [{ type: "text", text }] })
         break
       }
 
       case "code": {
-        // Block-level <code> not inside <pre> — treat as codeBlock
-        nodes.push({
-          type: "codeBlock",
-          content: [{ type: "text", text: $el.text() }],
-        })
+        nodes.push({ type: "codeBlock", content: [{ type: "text", text: $el.text() }] })
         break
       }
 
+      // ── Images ────────────────────────────────────────────────────────────
       case "img": {
-        const src = $el.attr("src") ?? ""
-        nodes.push({ type: "image", attrs: { src } })
+        const src = resolveImgSrc($el)
+        if (src) {
+          nodes.push({
+            type: "image",
+            attrs: {
+              src,
+              alt: $el.attr("alt") ?? "",
+              title: $el.attr("title") ?? null,
+            },
+          })
+        }
         break
       }
 
+      // ── Video iframes (HubSpot, Synthesia, YouTube, …) ───────────────────
+      case "iframe": {
+        const src = resolveIframeSrc($el)
+        if (src) {
+          const title = $el.attr("title") ?? ""
+          nodes.push({ type: "videoEmbed", attrs: { src, title } })
+        }
+        break
+      }
+
+      // ── Horizontal rule ───────────────────────────────────────────────────
       case "hr": {
         nodes.push({ type: "horizontalRule" })
         break
       }
 
+      // ── Unknown / wrapper elements — recurse into children ─────────────────
       default:
-        // For unknown block elements, try to parse their children recursively
-        nodes.push(...parseBlock($, $el.children()))
+        // Check if a descendant is an iframe (video wrapper divs)
+        const iframes = $el.find("iframe")
+        if (iframes.length > 0) {
+          iframes.each((_j, iframe) => {
+            const src = resolveIframeSrc($(iframe))
+            if (src) {
+              const title = $(iframe).attr("title") ?? ""
+              nodes.push({ type: "videoEmbed", attrs: { src, title } })
+            }
+          })
+          // Also recurse for any non-iframe content inside the wrapper
+          const childNodes = parseBlock($, $el.children().not("iframe, div:has(iframe)"))
+          nodes.push(...childNodes)
+        } else {
+          nodes.push(...parseBlock($, $el.children()))
+        }
         break
     }
   })
@@ -280,16 +345,12 @@ function htmlToTiptapDoc(html: string): TiptapDoc {
   const $ = cheerio.load(`<div id="__root">${html}</div>`)
   const root = $("#__root")
   const nodes = parseBlock($, root.children())
-  return {
-    type: "doc",
-    content: nodes.filter(Boolean),
-  }
+  return { type: "doc", content: nodes.filter(Boolean) }
 }
 
 // ─── Excerpt helper ───────────────────────────────────────────────────────────
 
 function extractExcerpt(html: string, maxLen = 160): string {
-  // Strip HTML tags and collapse whitespace
   const text = html
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
@@ -300,95 +361,83 @@ function extractExcerpt(html: string, maxLen = 160): string {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  // 1. Read all scraped JSON files
+  console.log(`[import] Mode: ${UPSERT_MODE ? "UPDATE (upsert)" : "INSERT (skip existing)"}`)
+  console.log("[import] Pass --update to overwrite existing articles\n")
+
   let files: string[]
   try {
     const entries = await fs.readdir(SCRAPED_DIR)
     files = entries.filter((f) => f.endsWith(".json"))
   } catch {
     console.error(`[import] ERROR: Could not read scraped directory at ${SCRAPED_DIR}`)
-    console.error("[import] Run scripts/scrape-hubspot.ts first.")
     process.exit(1)
   }
 
   if (files.length === 0) {
-    console.log("[import] No scraped JSON files found. Nothing to import.")
+    console.log("[import] No scraped JSON files found. Run scripts/scrape-hubspot.ts first.")
     return
   }
 
   console.log(`[import] Found ${files.length} scraped articles`)
 
-  // 2. Read existing categories from DB
-  const categories = await prisma.category.findMany({
-    include: { translations: true },
+  // Load categories from DB
+  const categories = await prisma.category.findMany({ include: { translations: true } })
+  const categoryIdBySlug = new Map(categories.map((c) => [c.slug, c.id]))
+
+  // Load existing article slugs
+  const existingArticles = await prisma.article.findMany({
+    select: { id: true, slug: true },
   })
+  const existingBySlug = new Map(existingArticles.map((a) => [a.slug, a.id]))
+  const existingSlugs = new Set(existingBySlug.keys())
 
-  // Build slug → category ID map
-  const categoryIdBySlug = new Map<string, string>()
-  for (const cat of categories) {
-    categoryIdBySlug.set(cat.slug, cat.id)
-  }
-
-  // 3. Collect existing article slugs from DB to detect duplicates
-  const existingArticles = await prisma.article.findMany({ select: { slug: true } })
-  const existingSlugs = new Set(existingArticles.map((a) => a.slug))
-
-  let imported = 0
+  let inserted = 0
+  let updated = 0
   let skipped = 0
 
-  for (const file of files) {
-    const filePath = path.join(SCRAPED_DIR, file)
+  for (let i = 0; i < files.length; i++) {
+    const filePath = path.join(SCRAPED_DIR, files[i])
     const raw = await fs.readFile(filePath, "utf-8")
     let article: ScrapedArticle
 
     try {
       article = JSON.parse(raw) as ScrapedArticle
     } catch {
-      console.warn(`[import] WARN: Could not parse ${file}, skipping`)
+      console.warn(`[import] WARN: Could not parse ${files[i]}, skipping`)
       skipped++
       continue
     }
 
-    // 4. Skip if article with same slug already exists in DB
-    if (existingSlugs.has(article.slug)) {
-      console.log(`[import] SKIP (exists) ${article.slug}`)
-      skipped++
-      continue
-    }
-
-    // 5. Convert HTML to Tiptap JSON
     const content = htmlToTiptapDoc(article.html)
-
-    // 6. Generate excerpt from raw HTML
     const excerpt = extractExcerpt(article.html)
-
-    // 7. Resolve category ID (null if not found) — apply slug mapping
     const mappedCategorySlug = mapCategorySlug(article.categorySlug)
     const categoryId = categoryIdBySlug.get(mappedCategorySlug) ?? null
 
     if (!categoryId) {
       console.warn(
-        `[import] WARN: No category found for slug "${article.categorySlug}" → "${mappedCategorySlug}" (article: ${article.slug})`
+        `[import] WARN: No category for "${article.categorySlug}" → "${mappedCategorySlug}" (${article.slug})`
       )
     }
 
-    // 8. Generate a unique slug (deduplicating against DB + already-processed in this run)
-    const safeSlug = await uniqueSlug(slugify(article.slug), existingSlugs)
+    const existingId = existingBySlug.get(article.slug)
 
-    // 9. Create Article + ArticleTranslation in a transaction
-    await prisma.$transaction(async (tx) => {
-      const created = await tx.article.create({
-        data: {
-          slug: safeSlug,
-          categoryId,
-          isGated: false,
-          position: 0,
+    if (existingId) {
+      if (!UPSERT_MODE) {
+        process.stdout.write(`[import] SKIP ${article.slug}\n`)
+        skipped++
+        continue
+      }
+
+      // Update existing article's EN translation
+      await prisma.articleTranslation.upsert({
+        where: { articleId_locale: { articleId: existingId, locale: "en" } },
+        update: {
+          title: article.title,
+          content: content as object,
+          excerpt,
         },
-      })
-
-      await tx.articleTranslation.create({
-        data: {
-          articleId: created.id,
+        create: {
+          articleId: existingId,
           locale: "en",
           title: article.title,
           content: content as object,
@@ -396,14 +445,41 @@ async function main() {
           status: "DRAFT",
         },
       })
-    })
 
-    console.log(`[import] ${article.slug}`)
-    imported++
+      // Update category if changed
+      await prisma.article.update({
+        where: { id: existingId },
+        data: { categoryId },
+      })
+
+      process.stdout.write(`[import] UPDATE ${article.slug}\n`)
+      updated++
+    } else {
+      // New article
+      const safeSlug = await uniqueSlug(slugify(article.slug), existingSlugs)
+
+      await prisma.$transaction(async (tx) => {
+        const created = await tx.article.create({
+          data: { slug: safeSlug, categoryId, isGated: false, position: 0 },
+        })
+        await tx.articleTranslation.create({
+          data: {
+            articleId: created.id,
+            locale: "en",
+            title: article.title,
+            content: content as object,
+            excerpt,
+            status: "DRAFT",
+          },
+        })
+      })
+
+      process.stdout.write(`[import] INSERT ${article.slug}\n`)
+      inserted++
+    }
   }
 
-  console.log(`[import] Done. Imported: ${imported}, Skipped: ${skipped}`)
-
+  console.log(`\n[import] Done. Inserted: ${inserted}  Updated: ${updated}  Skipped: ${skipped}`)
   await prisma.$disconnect()
 }
 

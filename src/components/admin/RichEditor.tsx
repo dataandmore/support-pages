@@ -15,13 +15,14 @@ import { useState } from "react"
 
 interface RichEditorProps {
   content?: unknown
-  onChange: (content: unknown) => void
-  /** Optional: called when user uploads an image directly (file picker fallback). */
+  onChange?: (content: unknown) => void
+  /** Render content read-only — no toolbar, no cursor, same prose styles. Used for preview. */
+  readOnly?: boolean
   onImageUpload?: (file: File) => Promise<string>
   placeholder?: string
 }
 
-export function RichEditor({ content, onChange, onImageUpload }: RichEditorProps) {
+export function RichEditor({ content, onChange, onImageUpload, readOnly = false }: RichEditorProps) {
   const [showMediaPicker, setShowMediaPicker] = useState(false)
 
   const editor = useEditor({
@@ -38,23 +39,28 @@ export function RichEditor({ content, onChange, onImageUpload }: RichEditorProps
       TiptapHighlight,
       TiptapYoutube.configure({ controls: true, nocookie: true }),
     ],
+    immediatelyRender: false,
+    editable: !readOnly,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     content: content as any,
     editorProps: {
       attributes: {
-        class: "prose max-w-none focus:outline-none min-h-[400px] p-6",
+        class: readOnly
+          ? "prose prose-gray max-w-none p-0 focus:outline-none"
+          : "prose prose-gray max-w-none focus:outline-none min-h-[400px] p-6",
       },
     },
     onUpdate: ({ editor }) => {
-      onChange(editor.getJSON())
+      if (!readOnly) onChange?.(editor.getJSON())
     },
   })
 
-  // Opens the media library picker. Falls back to direct file upload if no picker is available.
+  if (readOnly) {
+    return <EditorContent editor={editor} />
+  }
+
   function handleImageButtonClick() {
     if (!editor) return
-    // If onImageUpload is provided (direct upload to /api/media), open the media picker
-    // which also supports file uploads internally.
     setShowMediaPicker(true)
   }
 
@@ -67,10 +73,7 @@ export function RichEditor({ content, onChange, onImageUpload }: RichEditorProps
   return (
     <>
       <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-        <EditorToolbar
-          editor={editor}
-          onImageUpload={handleImageButtonClick}
-        />
+        <EditorToolbar editor={editor} onImageUpload={handleImageButtonClick} />
         <EditorContent editor={editor} />
       </div>
 

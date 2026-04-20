@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk"
+import path from "path"
 import { PrismaClient } from "@prisma/client"
+import { PrismaPg } from "@prisma/adapter-pg"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -37,22 +39,36 @@ const LOCALE_INSTRUCTIONS: Record<string, string> = {
 
 const TARGET_LOCALES = ["da", "sv", "de"] as const
 
+// ─── CLI flags ────────────────────────────────────────────────────────────────
+
+// --force: re-translate even PUBLISHED translations (use after fixing bad translations)
+const FORCE = process.argv.includes("--force")
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
   // Load env vars (Node 20.12+ built-in)
-  process.loadEnvFile(".env.local")
+  process.loadEnvFile(path.join(process.cwd(), ".env.local"))
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const prisma = new PrismaClient()
+  const connectionString = process.env.DATABASE_URL
+  if (!connectionString) throw new Error("DATABASE_URL not set")
+  const adapter = new PrismaPg({ connectionString })
+  const prisma = new PrismaClient({ adapter })
+
+  if (FORCE) {
+    console.log("[translate] --force mode: will re-translate ALL locales including PUBLISHED")
+  }
 
   let totalTranslated = 0
   let totalSkipped = 0
 
   try {
-    // Find all EN translations with DRAFT or AI_DRAFT status
+    // Find all EN translations (any status) — we'll skip locales that are
+    // already fully translated (non-draft), but we need the full list to
+    // catch articles that are missing a locale translation entirely.
     const enTranslations = await prisma.articleTranslation.findMany({
-      where: { locale: "en", status: { in: ["DRAFT", "AI_DRAFT"] } },
+      where: { locale: "en" },
       include: { article: true },
     })
 
@@ -75,7 +91,9 @@ async function main() {
           })
 
           // Skip if exists and is not in a draft state (i.e. IN_REVIEW or PUBLISHED)
+          // unless --force is set, which re-translates everything.
           if (
+            !FORCE &&
             existing &&
             existing.status !== "DRAFT" &&
             existing.status !== "AI_DRAFT"

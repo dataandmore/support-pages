@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
+  ExternalLink,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -104,6 +105,20 @@ export function Sidebar({ role, userEmail, userName }: SidebarProps) {
           </>
         )}
       </nav>
+
+      {/* View frontend */}
+      <div className="px-2 pb-2">
+        <Link
+          href="/en"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="View public site"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors w-full"
+        >
+          <ExternalLink className="w-4 h-4 shrink-0" />
+          {!collapsed && <span>View site</span>}
+        </Link>
+      </div>
 
       {/* User + logout */}
       <div className="border-t border-gray-100 p-3">
