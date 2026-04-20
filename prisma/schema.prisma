@@ -28,6 +28,7 @@ enum ArticleStatus {
   AI_DRAFT
   IN_REVIEW
   PUBLISHED
+  ARCHIVED
 }
 
 enum VideoStatus {

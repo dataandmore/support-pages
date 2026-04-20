@@ -92,7 +92,7 @@ function serializeBlock(nodes: any[]): string {
 
         case "table": {
           const rows = (node.content ?? []).map((row: { content: unknown[] }) => {
-            const cells = (row.content ?? []).map((cell: { type: string; attrs?: Record<string, unknown>; content: unknown[] }) => {
+            const cells = ((row.content ?? []) as Array<{ type: string; attrs?: Record<string, unknown>; content: unknown[] }>).map((cell) => {
               const tag = cell.type === "tableHeader" ? "th" : "td"
               const colspan = cell.attrs?.colspan && cell.attrs.colspan !== 1 ? ` colspan="${cell.attrs.colspan}"` : ""
               const rowspan = cell.attrs?.rowspan && cell.attrs.rowspan !== 1 ? ` rowspan="${cell.attrs.rowspan}"` : ""

@@ -28,7 +28,13 @@ export default async function VideosPage({
   const isAuthenticated = !!session
 
   const videos = await prisma.video.findMany({
-    where: { status: "READY" },
+    where: {
+      status: "READY",
+      translations: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        some: { locale: validLocale as any },
+      },
+    },
     orderBy: { createdAt: "desc" },
     include: {
       translations: {
@@ -67,12 +73,12 @@ export default async function VideosPage({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {videos.map((video) => {
               const translation = video.translations[0]
-              const title = translation?.title || video.originalFilename
+              const title = translation?.title ?? video.originalFilename
               const description = translation?.description ?? null
               const locked = video.isGated && !isAuthenticated
 
               const hlsUrl = video.hlsPath
-                ? `/api/stream/${video.hlsPath}/playlist.m3u8`
+                ? `/api/stream/${video.hlsPath}`
                 : null
 
               const posterUrl = video.thumbnailPath

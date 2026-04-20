@@ -27,8 +27,10 @@ export function AnthropicKeyForm({ isConfigured }: AnthropicKeyFormProps) {
         body: JSON.stringify({ key: "ANTHROPIC_API_KEY", value }),
       })
       if (!res.ok) {
-        const { error } = await res.json()
-        throw new Error(error ?? "Failed to save")
+        const text = await res.text()
+        let msg = "Failed to save"
+        try { msg = JSON.parse(text).error ?? msg } catch { /* non-JSON response */ }
+        throw new Error(msg)
       }
       setSaved(true)
       setValue("")

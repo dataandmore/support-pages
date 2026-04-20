@@ -25,7 +25,7 @@ const UpdateTranslationSchema = z.object({
   title: z.string().min(1),
   content: z.any(),
   excerpt: z.string().optional(),
-  status: z.enum(["DRAFT", "AI_DRAFT", "IN_REVIEW", "PUBLISHED"]),
+  status: z.enum(["DRAFT", "AI_DRAFT", "IN_REVIEW", "PUBLISHED", "ARCHIVED"]),
 })
 
 const UpdateArticleSchema = z.object({
@@ -48,6 +48,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
   const { translation, ...articleData } = parsed.data
+
+  // When archiving, cascade to ALL locale translations
+  if (translation?.status === "ARCHIVED") {
+    await prisma.articleTranslation.updateMany({
+      where: { articleId: id },
+      data: { status: "ARCHIVED" },
+    })
+
+    const article = await prisma.article.update({
+      where: { id },
+      data: articleData,
+      include: { translations: true },
+    })
+
+    return NextResponse.json({ article })
+  }
 
   const article = await prisma.article.update({
     where: { id },

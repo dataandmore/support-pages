@@ -28,6 +28,26 @@ interface ImportItem {
   download: string  // mp4 URL
 }
 
+// ─── Language prefix detection ────────────────────────────────────────────────
+
+const LOCALE_PREFIXES: [string, string][] = [
+  ["DE (Germany) - ", "de"],
+  ["DA - ", "da"],
+  ["SV - ", "sv"],
+  ["DE - ", "de"],
+]
+
+const SUPPORTED_LOCALES = new Set(["en", "da", "sv", "de"])
+
+function parseLocaleAndBase(title: string): { locale: string; base: string } {
+  for (const [prefix, locale] of LOCALE_PREFIXES) {
+    if (title.startsWith(prefix)) {
+      return { locale, base: title.slice(prefix.length).trim() }
+    }
+  }
+  return { locale: "en", base: title }
+}
+
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session || session.user.role !== "ADMIN") {
@@ -75,7 +95,9 @@ export async function POST(req: NextRequest) {
 
       await fs.writeFile(originalPath, buffer)
 
-      const slug = await uniqueSlug(slugify(item.title || `synthesia-${item.id}`))
+      const { locale: parsedLocale, base: cleanTitle } = parseLocaleAndBase(item.title)
+      const locale = SUPPORTED_LOCALES.has(parsedLocale) ? parsedLocale : "en"
+      const slug = await uniqueSlug(slugify(cleanTitle || `synthesia-${item.id}`))
 
       // Create DB record
       const video = await prisma.video.create({
@@ -88,8 +110,8 @@ export async function POST(req: NextRequest) {
           status: "PROCESSING",
           translations: {
             create: {
-              locale: "en",
-              title: item.title,
+              locale: locale as "en" | "da" | "sv" | "de",
+              title: cleanTitle,
               description: null,
             },
           },

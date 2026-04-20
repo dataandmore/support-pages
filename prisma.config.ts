@@ -2,7 +2,7 @@ import { defineConfig, env } from "prisma/config"
 
 // Note: process.loadEnvFile requires Node.js >= 20.12.0
 // Minimum Node 20 LTS is required for this project.
-process.loadEnvFile(".env.local")
+try { process.loadEnvFile(".env.local") } catch {}
 
 type Env = {
   DATABASE_URL: string

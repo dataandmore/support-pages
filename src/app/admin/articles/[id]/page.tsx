@@ -300,9 +300,11 @@ export default function EditArticlePage() {
                   className={`ml-2 inline-block w-1.5 h-1.5 rounded-full ${
                     locT.status === "PUBLISHED"
                       ? "bg-green-500"
-                      : locT.status === "AI_DRAFT"
-                        ? "bg-purple-400"
-                        : "bg-gray-300"
+                      : locT.status === "ARCHIVED"
+                        ? "bg-red-400"
+                        : locT.status === "AI_DRAFT"
+                          ? "bg-purple-400"
+                          : "bg-gray-300"
                   }`}
                 />
               )}
@@ -406,6 +408,7 @@ export default function EditArticlePage() {
               <option value="AI_DRAFT">AI Draft</option>
               <option value="IN_REVIEW">In Review</option>
               <option value="PUBLISHED">Published</option>
+              <option value="ARCHIVED">Archived</option>
             </select>
           </div>
 

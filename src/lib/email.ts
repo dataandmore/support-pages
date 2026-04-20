@@ -1,10 +1,11 @@
 import { ServerClient } from "postmark"
 
-if (!process.env.POSTMARK_API_KEY && process.env.NODE_ENV === "production") {
-  throw new Error("POSTMARK_API_KEY is not set")
+function getClient() {
+  if (!process.env.POSTMARK_API_KEY) {
+    throw new Error("POSTMARK_API_KEY is not set")
+  }
+  return new ServerClient(process.env.POSTMARK_API_KEY)
 }
-
-const client = new ServerClient(process.env.POSTMARK_API_KEY ?? "POSTMARK_API_TEST")
 
 const FROM_EMAIL = "support@dataandmore.com"
 const PRODUCT_NAME = "Data & More Support Portal"
@@ -14,7 +15,7 @@ export async function sendUserInvite(
   name: string,
   tempPassword: string
 ): Promise<void> {
-  await client.sendEmailWithTemplate({
+  await getClient().sendEmailWithTemplate({
     From: FROM_EMAIL,
     To: to,
     TemplateAlias: "user-invite",
@@ -32,7 +33,7 @@ export async function sendPasswordReset(
   name: string,
   resetUrl: string
 ): Promise<void> {
-  await client.sendEmailWithTemplate({
+  await getClient().sendEmailWithTemplate({
     From: FROM_EMAIL,
     To: to,
     TemplateAlias: "password-reset",
@@ -45,7 +46,7 @@ export async function sendPasswordReset(
 }
 
 export async function sendWelcome(to: string, name: string): Promise<void> {
-  await client.sendEmailWithTemplate({
+  await getClient().sendEmailWithTemplate({
     From: FROM_EMAIL,
     To: to,
     TemplateAlias: "welcome",

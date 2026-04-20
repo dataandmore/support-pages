@@ -39,6 +39,17 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Value required" }, { status: 400 })
   }
 
-  writeEnvKey(key, value.trim())
+  const trimmed = value.trim()
+
+  try {
+    writeEnvKey(key, trimmed)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to write .env.local"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+
+  // Apply immediately so the key works without a restart
+  process.env[key] = trimmed
+
   return NextResponse.json({ success: true })
 }

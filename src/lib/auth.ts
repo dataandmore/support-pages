@@ -69,6 +69,7 @@ const authConfig: NextAuthConfig = {
   pages: {
     signIn: "/en/login",
   },
+  trustHost: true,
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig)
