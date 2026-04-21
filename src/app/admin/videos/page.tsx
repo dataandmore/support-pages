@@ -264,6 +264,8 @@ export default function VideosPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [editingVideo, setEditingVideo] = useState<Video | null>(null)
+  const [regenStatus, setRegenStatus] = useState<"idle" | "running" | "done" | "error">("idle")
+  const [regenMessage, setRegenMessage] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingIntervals = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
 
@@ -388,6 +390,30 @@ export default function VideosPage() {
     await fetch(`/api/videos/${videoId}`, { method: "DELETE" })
   }
 
+  async function handleRegenThumbnails() {
+    setRegenStatus("running")
+    setRegenMessage("")
+    try {
+      const res = await fetch("/api/admin/synthesia/thumbnails", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) {
+        setRegenStatus("error")
+        setRegenMessage(data.error ?? "Failed")
+        return
+      }
+      const { summary } = data
+      setRegenStatus("done")
+      setRegenMessage(
+        `${summary.downloaded} downloaded, ${summary.skipped} already existed, ${summary.notFound} not found in Synthesia`
+      )
+      // Reload to refresh thumbnails
+      loadVideos()
+    } catch {
+      setRegenStatus("error")
+      setRegenMessage("Network error")
+    }
+  }
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -399,6 +425,29 @@ export default function VideosPage() {
 
       {/* Synthesia import */}
       <SynthesiaImportPanel />
+
+      {/* Regenerate thumbnails */}
+      <div className="flex items-center gap-3 mb-4">
+        <button
+          onClick={handleRegenThumbnails}
+          disabled={regenStatus === "running"}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-60 flex items-center gap-2"
+        >
+          {regenStatus === "running" ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Fetching thumbnails…
+            </>
+          ) : (
+            "Regenerate thumbnails"
+          )}
+        </button>
+        {regenMessage && (
+          <span className={`text-xs ${regenStatus === "error" ? "text-red-600" : "text-gray-500"}`}>
+            {regenMessage}
+          </span>
+        )}
+      </div>
 
       {/* Upload zone */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
