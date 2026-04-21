@@ -171,8 +171,8 @@ export default function EditArticlePage() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+      {/* Top bar — sticky */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push("/admin/articles")}
@@ -279,8 +279,8 @@ export default function EditArticlePage() {
         </div>
       )}
 
-      {/* Locale tabs */}
-      <div className="flex border-b border-gray-200 bg-white px-6">
+      {/* Locale tabs — sticky below top bar */}
+      <div className="flex border-b border-gray-200 bg-white px-6 sticky top-[57px] z-10">
         {LOCALES.map((loc) => {
           const locT = translations[loc]
           const hasContent = !!locT.title
@@ -387,8 +387,8 @@ export default function EditArticlePage() {
           </div>
         </div>
 
-        {/* Right panel */}
-        <aside className="w-60 border-l border-gray-200 bg-white p-4 space-y-5 overflow-auto">
+        {/* Right panel — sticky */}
+        <aside className="w-60 border-l border-gray-200 bg-white p-4 space-y-5 self-start sticky top-[100px]">
           {/* Status */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">

@@ -266,6 +266,42 @@ export default function VideosPage() {
   const [editingVideo, setEditingVideo] = useState<Video | null>(null)
   const [regenStatus, setRegenStatus] = useState<"idle" | "running" | "done" | "error">("idle")
   const [regenMessage, setRegenMessage] = useState("")
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === videos.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(videos.map((v) => v.id)))
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} video${selectedIds.size > 1 ? "s" : ""}? This cannot be undone.`)) return
+    setBulkDeleting(true)
+    for (const id of selectedIds) {
+      const interval = pollingIntervals.current.get(id)
+      if (interval) {
+        clearInterval(interval)
+        pollingIntervals.current.delete(id)
+      }
+      await fetch(`/api/videos/${id}`, { method: "DELETE" })
+    }
+    setVideos((prev) => prev.filter((v) => !selectedIds.has(v.id)))
+    setSelectedIds(new Set())
+    setBulkDeleting(false)
+  }
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingIntervals = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
 
@@ -548,8 +584,38 @@ export default function VideosPage() {
           </div>
         ) : (
           <table className="w-full text-sm">
+            {/* Bulk actions bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-orange-50 border-b border-orange-100">
+                <span className="text-sm font-medium text-[#EC6E1E]">
+                  {selectedIds.size} selected
+                </span>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {bulkDeleting ? "Deleting…" : "Delete selected"}
+                </button>
+                <button
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+                >
+                  Clear selection
+                </button>
+              </div>
+            )}
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={videos.length > 0 && selectedIds.size === videos.length}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-[#EC6E1E] focus:ring-[#EC6E1E] cursor-pointer"
+                  />
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600 w-20">Preview</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Title (EN)</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
@@ -566,7 +632,16 @@ export default function VideosPage() {
                   video.originalFilename
                 const cfg = statusConfig[video.status]
                 return (
-                  <tr key={video.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={video.id} className={`transition-colors ${selectedIds.has(video.id) ? "bg-orange-50/50" : "hover:bg-gray-50"}`}>
+                    {/* Checkbox */}
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(video.id)}
+                        onChange={() => toggleSelect(video.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-[#EC6E1E] focus:ring-[#EC6E1E] cursor-pointer"
+                      />
+                    </td>
                     {/* Thumbnail */}
                     <td className="px-4 py-3">
                       {video.thumbnailPath ? (
@@ -574,12 +649,20 @@ export default function VideosPage() {
                           src={`/api/stream/${video.thumbnailPath}`}
                           alt=""
                           className="w-16 h-10 object-cover rounded-lg bg-gray-100"
+                          onError={(e) => {
+                            const el = e.currentTarget
+                            el.style.display = "none"
+                            const placeholder = el.nextElementSibling as HTMLElement
+                            if (placeholder) placeholder.style.display = "flex"
+                          }}
                         />
-                      ) : (
-                        <div className="w-16 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                          <Play className="w-4 h-4 text-gray-300" />
-                        </div>
-                      )}
+                      ) : null}
+                      <div
+                        className="w-16 h-10 rounded-lg bg-gray-100 items-center justify-center"
+                        style={{ display: video.thumbnailPath ? "none" : "flex" }}
+                      >
+                        <Play className="w-4 h-4 text-gray-300" />
+                      </div>
                     </td>
 
                     {/* Title + filename */}
