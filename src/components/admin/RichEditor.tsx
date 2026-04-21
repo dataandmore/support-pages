@@ -10,6 +10,7 @@ import TiptapTextAlign from "@tiptap/extension-text-align"
 import TiptapHighlight from "@tiptap/extension-highlight"
 import TiptapYoutube from "@tiptap/extension-youtube"
 import { EditorToolbar } from "./EditorToolbar"
+import { LinkBubbleMenu } from "./LinkBubbleMenu"
 import { MediaPicker } from "./MediaPicker"
 import { VideoPicker, type VideoInsertion } from "./VideoPicker"
 import { VideoEmbed } from "@/lib/tiptap-video-embed"
@@ -101,6 +102,7 @@ export function RichEditor({ content, onChange, onImageUpload, readOnly = false 
           onImageUpload={handleImageButtonClick}
           onVideoInsert={() => setShowVideoPicker(true)}
         />
+        {editor && <LinkBubbleMenu editor={editor} />}
         <EditorContent editor={editor} />
       </div>
 

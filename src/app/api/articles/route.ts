@@ -11,10 +11,19 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
   const categoryId = searchParams.get("categoryId")
   const locale = searchParams.get("locale") ?? "en"
+  const search = searchParams.get("search")
 
   const articles = await prisma.article.findMany({
     where: {
       ...(categoryId ? { categoryId } : {}),
+      ...(search ? {
+        translations: {
+          some: {
+            locale: locale as "en" | "da" | "sv" | "de",
+            title: { contains: search, mode: "insensitive" as const },
+          },
+        },
+      } : {}),
     },
     include: {
       translations: { where: { locale: locale as "en" | "da" | "sv" | "de" } },
