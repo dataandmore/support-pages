@@ -34,6 +34,7 @@ const UpdateArticleSchema = z.object({
   pinned: z.boolean().optional(),
   position: z.number().optional(),
   translation: UpdateTranslationSchema.optional(),
+  tagNames: z.array(z.string()).optional(),
 })
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -47,7 +48,27 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const parsed = UpdateArticleSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-  const { translation, ...articleData } = parsed.data
+  const { translation, tagNames, ...articleData } = parsed.data
+
+  // Handle tag updates if provided
+  if (tagNames !== undefined) {
+    // Delete existing tags
+    await prisma.articleTag.deleteMany({ where: { articleId: id } })
+
+    // Upsert tags and create associations
+    for (const name of tagNames) {
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+      if (!slug) continue
+      const tag = await prisma.tag.upsert({
+        where: { slug },
+        create: { slug, name },
+        update: {},
+      })
+      await prisma.articleTag.create({
+        data: { articleId: id, tagId: tag.id },
+      })
+    }
+  }
 
   // When archiving, cascade to ALL locale translations
   if (translation?.status === "ARCHIVED") {
@@ -59,7 +80,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const article = await prisma.article.update({
       where: { id },
       data: articleData,
-      include: { translations: true },
+      include: { translations: true, tags: { include: { tag: true } } },
     })
 
     return NextResponse.json({ article })
@@ -97,7 +118,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         },
       }),
     },
-    include: { translations: true },
+    include: { translations: true, tags: { include: { tag: true } } },
   })
 
   return NextResponse.json({ article })

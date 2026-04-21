@@ -14,7 +14,7 @@ export default auth((req) => {
   // If path doesn't start with a known locale, redirect to /en/[path]
   // e.g. /knowledge/some-article → /en/knowledge/some-article
   const firstSegment = pathname.split("/")[1]
-  if (firstSegment && !(locales as readonly string[]).includes(firstSegment) && !pathname.startsWith("/admin") && !pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+  if (firstSegment && !(locales as readonly string[]).includes(firstSegment) && !pathname.startsWith("/admin") && !pathname.startsWith("/api") && !pathname.startsWith("/_next") && !pathname.startsWith("/embed")) {
     return NextResponse.redirect(new URL(`/en${pathname}`, req.url))
   }
 

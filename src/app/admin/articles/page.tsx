@@ -9,6 +9,7 @@ export default async function ArticlesPage() {
       include: {
         translations: true,
         category: { include: { translations: { where: { locale: "en" } } } },
+        tags: { include: { tag: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -31,6 +32,7 @@ export default async function ArticlesPage() {
       title: enTranslation?.title ?? article.slug,
       categoryId: article.categoryId ?? null,
       category: article.category?.translations[0]?.name ?? "—",
+      tags: article.tags.map((t) => t.tag.name),
       statuses: Object.fromEntries(
         (["en", "da", "sv", "de"] as const).map((loc) => [
           loc,

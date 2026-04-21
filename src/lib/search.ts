@@ -32,12 +32,22 @@ export async function searchArticles(
       at2.locale = ${locale}::"Locale"
       AND at2.status = 'PUBLISHED'
       AND (
-        to_tsvector('simple', at2.title || ' ' || COALESCE(at2.excerpt, ''))
+        to_tsvector('simple', at2.title || ' ' || COALESCE(at2.excerpt, '') || ' ' || COALESCE((
+          SELECT string_agg(t.name, ' ')
+          FROM "ArticleTag" atg
+          JOIN "Tag" t ON t.id = atg."tagId"
+          WHERE atg."articleId" = a.id
+        ), ''))
         @@ plainto_tsquery('simple', ${query})
       )
     ORDER BY
       ts_rank(
-        to_tsvector('simple', at2.title || ' ' || COALESCE(at2.excerpt, '')),
+        to_tsvector('simple', at2.title || ' ' || COALESCE(at2.excerpt, '') || ' ' || COALESCE((
+          SELECT string_agg(t.name, ' ')
+          FROM "ArticleTag" atg
+          JOIN "Tag" t ON t.id = atg."tagId"
+          WHERE atg."articleId" = a.id
+        ), '')),
         plainto_tsquery('simple', ${query})
       ) DESC
     LIMIT 20

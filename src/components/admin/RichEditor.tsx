@@ -11,6 +11,8 @@ import TiptapHighlight from "@tiptap/extension-highlight"
 import TiptapYoutube from "@tiptap/extension-youtube"
 import { EditorToolbar } from "./EditorToolbar"
 import { MediaPicker } from "./MediaPicker"
+import { VideoPicker, type VideoInsertion } from "./VideoPicker"
+import { VideoEmbed } from "@/lib/tiptap-video-embed"
 import { useState } from "react"
 
 interface RichEditorProps {
@@ -24,6 +26,7 @@ interface RichEditorProps {
 
 export function RichEditor({ content, onChange, onImageUpload, readOnly = false }: RichEditorProps) {
   const [showMediaPicker, setShowMediaPicker] = useState(false)
+  const [showVideoPicker, setShowVideoPicker] = useState(false)
 
   const editor = useEditor({
     extensions: [
@@ -38,6 +41,7 @@ export function RichEditor({ content, onChange, onImageUpload, readOnly = false 
       TiptapTextAlign.configure({ types: ["heading", "paragraph"] }),
       TiptapHighlight,
       TiptapYoutube.configure({ controls: true, nocookie: true }),
+      VideoEmbed,
     ],
     immediatelyRender: false,
     editable: !readOnly,
@@ -72,10 +76,31 @@ export function RichEditor({ content, onChange, onImageUpload, readOnly = false 
     setShowMediaPicker(false)
   }
 
+  function handleVideoSelect(insertion: VideoInsertion) {
+    if (!editor) return
+    if (insertion.kind === "youtube") {
+      editor.chain().focus().setYoutubeVideo({ src: insertion.src }).run()
+    } else {
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "videoEmbed",
+          attrs: { src: insertion.src, title: insertion.title },
+        })
+        .run()
+    }
+    setShowVideoPicker(false)
+  }
+
   return (
     <>
       <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-        <EditorToolbar editor={editor} onImageUpload={handleImageButtonClick} />
+        <EditorToolbar
+          editor={editor}
+          onImageUpload={handleImageButtonClick}
+          onVideoInsert={() => setShowVideoPicker(true)}
+        />
         <EditorContent editor={editor} />
       </div>
 
@@ -83,6 +108,13 @@ export function RichEditor({ content, onChange, onImageUpload, readOnly = false 
         <MediaPicker
           onSelect={handleMediaSelect}
           onClose={() => setShowMediaPicker(false)}
+        />
+      )}
+
+      {showVideoPicker && (
+        <VideoPicker
+          onSelect={handleVideoSelect}
+          onClose={() => setShowVideoPicker(false)}
         />
       )}
     </>

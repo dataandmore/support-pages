@@ -15,6 +15,7 @@ import { useCallback } from "react"
 interface EditorToolbarProps {
   editor: Editor | null
   onImageUpload?: () => void
+  onVideoInsert?: () => void
 }
 
 function ToolbarButton({
@@ -51,7 +52,7 @@ function Divider() {
   return <div className="w-px h-5 bg-gray-200 mx-1" />
 }
 
-export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onImageUpload, onVideoInsert }: EditorToolbarProps) {
   const setLink = useCallback(() => {
     if (!editor) return
     const prev = editor.getAttributes("link").href
@@ -62,12 +63,6 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
     } else {
       editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run()
     }
-  }, [editor])
-
-  const insertYoutube = useCallback(() => {
-    if (!editor) return
-    const url = window.prompt("YouTube URL")
-    if (url) editor.chain().focus().setYoutubeVideo({ src: url }).run()
   }, [editor])
 
   const insertTable = useCallback(() => {
@@ -151,9 +146,11 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
           <ImageIcon className="w-4 h-4" />
         </ToolbarButton>
       )}
-      <ToolbarButton onClick={insertYoutube} title="Embed YouTube video">
-        <Play className="w-4 h-4" />
-      </ToolbarButton>
+      {onVideoInsert && (
+        <ToolbarButton onClick={onVideoInsert} title="Insert video">
+          <Play className="w-4 h-4" />
+        </ToolbarButton>
+      )}
       <ToolbarButton onClick={insertTable} title="Insert table">
         <TableIcon className="w-4 h-4" />
       </ToolbarButton>

@@ -33,6 +33,7 @@ export interface ArticleRow {
   title: string
   categoryId: string | null
   category: string
+  tags: string[]
   statuses: { en?: string; da?: string; sv?: string; de?: string }
 }
 
@@ -103,13 +104,22 @@ function SortableArticleRow({
           <GripVertical className="w-4 h-4" />
         </button>
       </td>
-      <td className="px-3 py-3 font-medium text-gray-900 max-w-md">
+      <td className="px-3 py-3 max-w-md">
         <Link
           href={`/admin/articles/${article.id}`}
-          className="hover:text-[#EC6E1E] transition-colors line-clamp-1"
+          className="font-medium text-gray-900 hover:text-[#EC6E1E] transition-colors line-clamp-1"
         >
           {article.title}
         </Link>
+        {article.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {article.tags.map((tag) => (
+              <span key={tag} className="inline-flex px-1.5 py-0.5 rounded bg-gray-100 text-[10px] font-medium text-gray-500">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </td>
       <td className="px-3 py-3">
         <select
@@ -195,7 +205,8 @@ export function ArticlesSearchList({ articles, categories }: { articles: Article
     return list.filter(
       (a) =>
         a.title.toLowerCase().includes(q) ||
-        a.category.toLowerCase().includes(q)
+        a.category.toLowerCase().includes(q) ||
+        a.tags.some((t) => t.toLowerCase().includes(q))
     )
   }, [articles, query, hideArchived])
 
