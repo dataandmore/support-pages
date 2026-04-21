@@ -38,6 +38,8 @@ interface Video {
   status: VideoStatus
   thumbnailPath: string | null
   hlsPath: string | null
+  synthesiaId: string | null
+  thumbnailUrl: string | null
   isGated: boolean
   createdAt: string
   translations: VideoTranslation[]
@@ -644,25 +646,31 @@ export default function VideosPage() {
                     </td>
                     {/* Thumbnail */}
                     <td className="px-4 py-3">
-                      {video.thumbnailPath ? (
-                        <img
-                          src={`/api/stream/${video.thumbnailPath}`}
-                          alt=""
-                          className="w-16 h-10 object-cover rounded-lg bg-gray-100"
-                          onError={(e) => {
-                            const el = e.currentTarget
-                            el.style.display = "none"
-                            const placeholder = el.nextElementSibling as HTMLElement
-                            if (placeholder) placeholder.style.display = "flex"
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="w-16 h-10 rounded-lg bg-gray-100 items-center justify-center"
-                        style={{ display: video.thumbnailPath ? "none" : "flex" }}
-                      >
-                        <Play className="w-4 h-4 text-gray-300" />
-                      </div>
+                      {(() => {
+                        const thumbSrc = video.thumbnailUrl
+                          ?? (video.thumbnailPath ? `/api/stream/${video.thumbnailPath}` : null)
+                        if (thumbSrc) {
+                          return (
+                            <img
+                              src={thumbSrc}
+                              alt=""
+                              className="w-16 h-10 object-cover rounded-lg bg-gray-100"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none"
+                              }}
+                            />
+                          )
+                        }
+                        return (
+                          <div className="w-16 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                            {video.synthesiaId ? (
+                              <span className="text-[8px] font-medium text-gray-400">S</span>
+                            ) : (
+                              <Play className="w-4 h-4 text-gray-300" />
+                            )}
+                          </div>
+                        )
+                      })()}
                     </td>
 
                     {/* Title + filename */}

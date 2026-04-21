@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { transcodeToHLS } from "@/lib/ffmpeg"
-import path from "path"
-import fs from "fs/promises"
 
 function slugify(s: string): string {
   return s
@@ -23,9 +20,11 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 interface ImportItem {
-  id: string        // Synthesia video ID
+  id: string          // Synthesia video ID
   title: string
-  download: string  // mp4 URL
+  download: string    // mp4 URL (kept for interface compat, not used)
+  thumbnail?: string  // Synthesia thumbnail URL
+  duration?: number   // Duration in seconds
 }
 
 // ─── Language prefix detection ────────────────────────────────────────────────
@@ -54,27 +53,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const apiKey = process.env.SYNTHESIA_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ error: "SYNTHESIA_API_KEY not configured" }, { status: 400 })
-  }
-
   const { videos } = (await req.json()) as { videos: ImportItem[] }
   if (!Array.isArray(videos) || videos.length === 0) {
     return NextResponse.json({ error: "No videos provided" }, { status: 400 })
   }
 
-  const results: { title: string; status: "queued" | "skipped" | "error"; reason?: string }[] = []
-
-  const originalsDir = path.join(process.cwd(), "uploads", "videos", "originals")
-  const thumbnailsDir = path.join(process.cwd(), "uploads", "videos", "thumbnails")
-  await fs.mkdir(originalsDir, { recursive: true })
-  await fs.mkdir(thumbnailsDir, { recursive: true })
+  const results: { title: string; status: "imported" | "skipped" | "error"; reason?: string }[] = []
 
   for (const item of videos) {
-    // Skip if a video with this Synthesia ID already exists (stored in originalFilename)
-    const existing = await prisma.video.findFirst({
-      where: { originalFilename: { contains: item.id } },
+    // Skip if a video with this Synthesia ID already exists
+    const existing = await prisma.video.findUnique({
+      where: { synthesiaId: item.id },
     })
     if (existing) {
       results.push({ title: item.title, status: "skipped", reason: "already imported" })
@@ -82,32 +71,20 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      // Download the MP4 from Synthesia
-      const dlRes = await fetch(item.download, { headers: { Authorization: apiKey } })
-      if (!dlRes.ok) throw new Error(`Download failed: HTTP ${dlRes.status}`)
-
-      const buffer = Buffer.from(await dlRes.arrayBuffer())
-      const id = crypto.randomUUID()
-      const filename = `${id}-synthesia-${item.id}.mp4`
-      const originalPath = path.join(originalsDir, filename)
-      const thumbnailPath = path.join(thumbnailsDir, `${id}.jpg`)
-      const hlsOutputDir = path.join(process.cwd(), "uploads", "videos", "hls", id)
-
-      await fs.writeFile(originalPath, buffer)
-
       const { locale: parsedLocale, base: cleanTitle } = parseLocaleAndBase(item.title)
       const locale = SUPPORTED_LOCALES.has(parsedLocale) ? parsedLocale : "en"
       const slug = await uniqueSlug(slugify(cleanTitle || `synthesia-${item.id}`))
 
-      // Create DB record
-      const video = await prisma.video.create({
+      await prisma.video.create({
         data: {
-          id,
           slug,
-          filename,
+          filename: `synthesia-${item.id}.mp4`,
           originalFilename: `synthesia-${item.id}.mp4`,
-          size: BigInt(buffer.length),
-          status: "PROCESSING",
+          size: BigInt(0),
+          status: "READY",
+          synthesiaId: item.id,
+          thumbnailUrl: item.thumbnail ?? null,
+          duration: item.duration ?? null,
           translations: {
             create: {
               locale: locale as "en" | "da" | "sv" | "de",
@@ -118,24 +95,7 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Transcode in background — don't await
-      transcodeToHLS(originalPath, hlsOutputDir, thumbnailPath)
-        .then(({ duration }) =>
-          prisma.video.update({
-            where: { id: video.id },
-            data: {
-              status: "READY",
-              hlsPath: `videos/hls/${id}/playlist.m3u8`,
-              thumbnailPath: `videos/thumbnails/${id}.jpg`,
-              duration,
-            },
-          })
-        )
-        .catch(() =>
-          prisma.video.update({ where: { id: video.id }, data: { status: "ERROR" } })
-        )
-
-      results.push({ title: item.title, status: "queued" })
+      results.push({ title: item.title, status: "imported" })
     } catch (err: unknown) {
       results.push({
         title: item.title,

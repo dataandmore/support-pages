@@ -6,7 +6,7 @@ import type { SynthesiaVideo } from "@/app/api/admin/synthesia/videos/route"
 
 type ImportResult = {
   title: string
-  status: "queued" | "skipped" | "error"
+  status: "imported" | "skipped" | "error"
   reason?: string
 }
 
@@ -69,7 +69,7 @@ export function SynthesiaImportPanel() {
     try {
       const toImport = videos
         .filter((v) => selected.has(v.id))
-        .map((v) => ({ id: v.id, title: v.title, download: v.download! }))
+        .map((v) => ({ id: v.id, title: v.title, download: v.download!, thumbnail: v.thumbnail, duration: v.duration }))
 
       const res = await fetch("/api/admin/synthesia/import", {
         method: "POST",
@@ -87,7 +87,7 @@ export function SynthesiaImportPanel() {
   }
 
   const allSelected = videos && selected.size === videos.length
-  const queued  = results?.filter((r) => r.status === "queued").length ?? 0
+  const queued  = results?.filter((r) => r.status === "imported").length ?? 0
   const skipped = results?.filter((r) => r.status === "skipped").length ?? 0
   const failed  = results?.filter((r) => r.status === "error").length ?? 0
 
@@ -97,7 +97,7 @@ export function SynthesiaImportPanel() {
         <div>
           <h2 className="text-sm font-semibold text-gray-700">Import from Synthesia</h2>
           <p className="text-xs text-gray-400 mt-0.5">
-            Download videos from your Synthesia workspace and add them to the video library.
+            Embed videos from your Synthesia workspace into the video library.
           </p>
         </div>
         <button
@@ -123,7 +123,7 @@ export function SynthesiaImportPanel() {
           {queued > 0 && (
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
               <CheckCircle className="w-3.5 h-3.5" />
-              {queued} queued for processing
+              {queued} imported
             </span>
           )}
           {skipped > 0 && (
@@ -138,7 +138,7 @@ export function SynthesiaImportPanel() {
             </span>
           )}
           <p className="text-xs text-gray-400 self-center">
-            Imported videos are now transcoding — they'll appear in the table below shortly.
+            Videos are embedded directly from Synthesia — no transcoding needed.
           </p>
         </div>
       )}
@@ -209,13 +209,13 @@ export function SynthesiaImportPanel() {
                       </div>
                       {result && (
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
-                          result.status === "queued"
+                          result.status === "imported"
                             ? "bg-emerald-50 text-emerald-700"
                             : result.status === "skipped"
                               ? "bg-gray-100 text-gray-500"
                               : "bg-red-50 text-red-600"
                         }`}>
-                          {result.status === "queued" ? "Queued" : result.status === "skipped" ? "Already imported" : `Error: ${result.reason}`}
+                          {result.status === "imported" ? "Imported" : result.status === "skipped" ? "Already imported" : `Error: ${result.reason}`}
                         </span>
                       )}
                     </label>

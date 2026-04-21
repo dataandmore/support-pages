@@ -205,6 +205,8 @@ model Video {
   status           VideoStatus @default(UPLOADING)
   thumbnailPath    String?
   hlsPath          String?
+  synthesiaId      String?     @unique
+  thumbnailUrl     String?
   isGated          Boolean     @default(false)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt

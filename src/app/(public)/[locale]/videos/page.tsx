@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { isValidLocale, defaultLocale } from "@/lib/i18n"
 import { PublicShell } from "@/components/public/PublicShell"
 import { VideoPlayer } from "@/components/public/VideoPlayer"
+import { SynthesiaEmbed } from "@/components/public/SynthesiaEmbed"
 import { auth } from "@/lib/auth"
 import type { Metadata } from "next"
 
@@ -77,22 +78,22 @@ export default async function VideosPage({
               const description = translation?.description ?? null
               const locked = video.isGated && !isAuthenticated
 
+              const isSynthesia = !!video.synthesiaId
               const hlsUrl = video.hlsPath
                 ? `/api/stream/${video.hlsPath}`
                 : null
 
-              const posterUrl = video.thumbnailPath
-                ? `/api/stream/${video.thumbnailPath}`
-                : undefined
+              const posterUrl = video.thumbnailUrl
+                ?? (video.thumbnailPath ? `/api/stream/${video.thumbnailPath}` : undefined)
 
               return (
                 <article
                   key={video.id}
                   className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col"
                 >
-                  {/* Player or locked overlay */}
+                  {/* Player / embed / locked overlay */}
                   <div className="relative aspect-video bg-gray-900">
-                    {locked || !hlsUrl ? (
+                    {locked ? (
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
                         {posterUrl && (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -102,20 +103,24 @@ export default async function VideosPage({
                             className="absolute inset-0 w-full h-full object-cover opacity-40"
                           />
                         )}
-                        {locked && (
-                          <div className="relative z-10 flex flex-col items-center gap-2">
-                            <span className="text-white/80 text-sm font-medium">Members only</span>
-                            <a
-                              href={`/${validLocale}/login?callbackUrl=/${validLocale}/videos`}
-                              className="text-xs bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-1.5 rounded-full transition-colors"
-                            >
-                              Log in to watch
-                            </a>
-                          </div>
-                        )}
+                        <div className="relative z-10 flex flex-col items-center gap-2">
+                          <span className="text-white/80 text-sm font-medium">Members only</span>
+                          <a
+                            href={`/${validLocale}/login?callbackUrl=/${validLocale}/videos`}
+                            className="text-xs bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-1.5 rounded-full transition-colors"
+                          >
+                            Log in to watch
+                          </a>
+                        </div>
                       </div>
-                    ) : (
+                    ) : isSynthesia ? (
+                      <SynthesiaEmbed videoId={video.synthesiaId!} className="w-full h-full" />
+                    ) : hlsUrl ? (
                       <VideoPlayer src={hlsUrl} poster={posterUrl} className="w-full h-full" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-white/50 text-sm">
+                        Video unavailable
+                      </div>
                     )}
                   </div>
 
