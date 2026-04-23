@@ -11,6 +11,8 @@ import { TableOfContents } from "@/components/public/TableOfContents"
 import { RelatedArticles } from "@/components/public/RelatedArticles"
 import { TranslationNotice } from "@/components/public/TranslationNotice"
 import { ArticleAdminBar } from "@/components/public/ArticleAdminBar"
+import { PageViewTracker } from "@/components/public/PageViewTracker"
+import { ArticleFeedback } from "@/components/public/ArticleFeedback"
 import type { Metadata } from "next"
 
 type Props = {
@@ -189,6 +191,8 @@ export default async function ArticlePage({ params }: Props) {
 
             <ArticleContent content={translation.content} />
             <RelatedArticles articles={relatedArticles} locale={validLocale} />
+            <ArticleFeedback articleId={article.id} locale={validLocale} />
+            <PageViewTracker articleId={article.id} locale={validLocale} />
           </article>
 
           {/* TOC sidebar — xl+ only */}

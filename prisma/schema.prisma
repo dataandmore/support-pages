@@ -137,6 +137,8 @@ model Article {
   tags         ArticleTag[]
   relatedTo    RelatedArticle[]   @relation("ArticleRelatedTo")
   relatedFrom  RelatedArticle[]   @relation("ArticleRelatedFrom")
+  pageViews    PageView[]
+  feedbacks    ArticleFeedback[]
 
   @@index([categoryId])
 }
@@ -224,6 +226,54 @@ model VideoTranslation {
   video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
 
   @@unique([videoId, locale])
+}
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+model PageView {
+  id             String   @id @default(cuid())
+  articleId      String
+  locale         String
+  referrer       String?
+  referrerDomain String?
+  userAgent      String?
+  sessionHash    String?
+  createdAt      DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@index([referrerDomain])
+  @@index([createdAt])
+  @@index([sessionHash, articleId])
+}
+
+model ArticleFeedback {
+  id          String   @id @default(cuid())
+  articleId   String
+  locale      String
+  helpful     Boolean
+  comment     String?  @db.Text
+  sessionHash String?
+  createdAt   DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+  @@index([createdAt])
+  @@index([sessionHash, articleId])
+}
+
+model SearchQuery {
+  id          String   @id @default(cuid())
+  query       String
+  locale      String
+  resultCount Int      @default(0)
+  sessionHash String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([query])
 }
 
 // ─── Media ────────────────────────────────────────────────────────────────────
