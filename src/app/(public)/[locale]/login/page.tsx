@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, useParams } from "next/navigation"
 
 function GoogleIcon() {
   return (
@@ -17,6 +17,8 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter()
+  const params = useParams()
+  const locale = (params.locale as string) || "en"
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") ?? "/admin"
   const authError = searchParams.get("error")
@@ -45,79 +47,102 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Data &amp; More</h1>
-          <p className="text-gray-500 mt-1">Support Portal — Sign in</p>
-        </div>
+    <div className="min-h-screen relative">
+      {/* Real homepage in background */}
+      <iframe
+        src={`/${locale}`}
+        className="absolute inset-0 w-full h-full border-0 pointer-events-none"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
 
-        {/* Google sign-in */}
-        <button
-          onClick={() => signIn("google", { callbackUrl })}
-          className="w-full flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2.5 rounded-lg transition-colors shadow-sm"
-        >
-          <GoogleIcon />
-          Sign in with Google
-        </button>
+      {/* Subtle overlay */}
+      <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]" />
 
-        {authError === "AccessDenied" && (
-          <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
-            Access denied — only @dataandmore.com accounts are allowed.
-          </p>
-        )}
+      {/* Login card */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 animate-fade-in border border-gray-100">
+          {/* Close button */}
+          <button
+            onClick={() => router.push(`/${locale}`)}
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Close"
+          >
+            ✕
+          </button>
 
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-gray-400 text-xs uppercase tracking-wide">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
-
-        {/* Credentials form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">Data &amp; More</h1>
+            <p className="text-gray-500 mt-1">Support Portal — Sign in</p>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
+          {/* Google sign-in */}
+          <button
+            onClick={() => signIn("google", { callbackUrl })}
+            className="w-full flex items-center justify-center bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2.5 rounded-lg transition-colors shadow-sm"
+          >
+            <GoogleIcon />
+            Sign in with Google
+          </button>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          {authError === "AccessDenied" && (
+            <p className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+              Access denied — only @dataandmore.com accounts are allowed.
+            </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#EC6E1E] hover:bg-[#d4601a] disabled:bg-orange-300 text-white font-medium py-2 rounded-lg transition-colors"
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-gray-400 text-xs uppercase tracking-wide">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          {/* Credentials form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#EC6E1E] hover:bg-[#d4601a] disabled:bg-orange-300 text-white font-medium py-2 rounded-lg transition-colors"
+            >
+              {loading ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

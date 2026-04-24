@@ -1,7 +1,6 @@
 import NextAuth, { type NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
@@ -9,7 +8,6 @@ import { prisma } from "@/lib/prisma"
 const ALLOWED_DOMAIN = "dataandmore.com"
 
 const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -61,31 +59,38 @@ const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
   callbacks: {
     async signIn({ user, account }) {
-      // Google: only allow @dataandmore.com
       if (account?.provider === "google") {
-        return !!user.email?.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`)
+        const email = user.email?.toLowerCase() ?? ""
+        if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) return false
+
+        // Find or create user in DB
+        let dbUser = await prisma.user.findUnique({ where: { email } })
+        if (!dbUser) {
+          dbUser = await prisma.user.create({
+            data: {
+              email,
+              name: user.name ?? email,
+              role: "ADMIN",
+            },
+          })
+        } else if (dbUser.role !== "ADMIN") {
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: { role: "ADMIN" },
+          })
+        }
+
+        // Store the DB user id so jwt callback can use it
+        user.id = dbUser.id
+        ;(user as Record<string, unknown>).role = "ADMIN"
+        return true
       }
-      // Credentials: authorize() already validated
       return true
     },
-    async jwt({ token, user, account }) {
+    jwt({ token, user }) {
       if (user) {
         token.id = user.id
-
-        if (account?.provider === "google") {
-          // Google user: ensure ADMIN role for dataandmore.com
-          const email = user.email?.toLowerCase() ?? ""
-          if (email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-            await prisma.user.update({
-              where: { id: user.id! },
-              data: { role: "ADMIN" },
-            })
-            token.role = "ADMIN"
-          }
-        } else {
-          // Credentials user: use role from DB
-          token.role = (user as { role: string }).role
-        }
+        token.role = (user as { role?: string }).role ?? "EDITOR"
       }
       return token
     },
@@ -99,6 +104,7 @@ const authConfig: NextAuthConfig = {
   },
   pages: {
     signIn: "/en/login",
+    error: "/en/login",
   },
   trustHost: true,
 }
