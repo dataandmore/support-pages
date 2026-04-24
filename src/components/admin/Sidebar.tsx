@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
 import {
   LayoutDashboard,
   FileText,
@@ -11,16 +10,12 @@ import {
   Image,
   Users,
   Settings,
-  LogOut,
   ChevronLeft,
-  ExternalLink,
 } from "lucide-react"
 import { useState } from "react"
 
 interface SidebarProps {
   role: string
-  userEmail: string
-  userName: string
 }
 
 const navItems = [
@@ -36,7 +31,7 @@ const adminItems = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 
-export function Sidebar({ role, userEmail, userName }: SidebarProps) {
+export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -51,33 +46,34 @@ export function Sidebar({ role, userEmail, userName }: SidebarProps) {
         collapsed ? "w-16" : "w-56"
       }`}
     >
-      {/* Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+      {/* Header / collapse toggle */}
+      <div className="flex items-center justify-between h-12 px-4 border-b border-gray-200 shrink-0">
         {!collapsed && (
-          <Link href="/admin" className="font-semibold text-gray-900 text-sm">
-            D&amp;M Support CMS
-          </Link>
+          <span className="text-sm font-bold text-[#2A2A2C] truncate">D&M Support CMS</span>
         )}
         <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 ml-auto"
+          onClick={() => setCollapsed((v) => !v)}
+          className={`text-gray-400 hover:text-gray-600 transition-colors ${collapsed ? "mx-auto" : ""}`}
+          title={collapsed ? "Expand" : "Collapse"}
         >
-          <ChevronLeft className={`w-4 h-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+          <ChevronLeft
+            className={`w-4 h-4 transition-transform ${collapsed ? "rotate-180" : ""}`}
+          />
         </button>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 py-4 px-2 space-y-0.5">
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-              isActive(item.href, item.exact)
-                ? "bg-orange-50 text-[#EC6E1E] font-medium"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-            }`}
             title={collapsed ? item.label : undefined}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isActive(item.href, item.exact)
+                ? "bg-orange-50 text-[#EC6E1E]"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            } ${collapsed ? "justify-center px-2" : ""}`}
           >
             <item.icon className="w-4 h-4 shrink-0" />
             {!collapsed && <span>{item.label}</span>}
@@ -86,17 +82,17 @@ export function Sidebar({ role, userEmail, userName }: SidebarProps) {
 
         {role === "ADMIN" && (
           <>
-            <div className={`my-2 border-t border-gray-100 ${collapsed ? "mx-2" : "mx-1"}`} />
+            <div className={`my-3 border-t border-gray-100 ${collapsed ? "mx-1" : "mx-2"}`} />
             {adminItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive(item.href)
-                    ? "bg-orange-50 text-[#EC6E1E] font-medium"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                }`}
                 title={collapsed ? item.label : undefined}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive(item.href)
+                    ? "bg-orange-50 text-[#EC6E1E]"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                } ${collapsed ? "justify-center px-2" : ""}`}
               >
                 <item.icon className="w-4 h-4 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
@@ -105,38 +101,6 @@ export function Sidebar({ role, userEmail, userName }: SidebarProps) {
           </>
         )}
       </nav>
-
-      {/* View frontend */}
-      <div className="px-2 pb-2">
-        <Link
-          href="/en"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="View public site"
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors w-full"
-        >
-          <ExternalLink className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>View site</span>}
-        </Link>
-      </div>
-
-      {/* User + logout */}
-      <div className="border-t border-gray-100 p-3">
-        {!collapsed && (
-          <div className="mb-2 px-2">
-            <p className="text-xs font-medium text-gray-900 truncate">{userName || userEmail}</p>
-            <p className="text-xs text-gray-400 truncate">{userEmail}</p>
-          </div>
-        )}
-        <button
-          onClick={() => signOut({ callbackUrl: "/en/login" })}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
-          title={collapsed ? "Sign out" : undefined}
-        >
-          <LogOut className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>Sign out</span>}
-        </button>
-      </div>
     </aside>
   )
 }
