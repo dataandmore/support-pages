@@ -1,11 +1,20 @@
 import NextAuth, { type NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
+import Google from "next-auth/providers/google"
+import { PrismaAdapter } from "@auth/prisma-adapter"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 
+const ALLOWED_DOMAIN = "dataandmore.com"
+
 const authConfig: NextAuthConfig = {
+  adapter: PrismaAdapter(prisma),
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },
@@ -51,10 +60,32 @@ const authConfig: NextAuthConfig = {
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    jwt({ token, user }) {
+    async signIn({ user, account }) {
+      // Google: only allow @dataandmore.com
+      if (account?.provider === "google") {
+        return !!user.email?.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`)
+      }
+      // Credentials: authorize() already validated
+      return true
+    },
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
-        token.role = (user as { role: string }).role
+
+        if (account?.provider === "google") {
+          // Google user: ensure ADMIN role for dataandmore.com
+          const email = user.email?.toLowerCase() ?? ""
+          if (email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+            await prisma.user.update({
+              where: { id: user.id! },
+              data: { role: "ADMIN" },
+            })
+            token.role = "ADMIN"
+          }
+        } else {
+          // Credentials user: use role from DB
+          token.role = (user as { role: string }).role
+        }
       }
       return token
     },
