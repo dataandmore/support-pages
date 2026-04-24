@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { isValidLocale, defaultLocale } from "@/lib/i18n"
 import { PublicShell } from "@/components/public/PublicShell"
@@ -47,7 +47,21 @@ export default async function CategoryPage({ params }: Props) {
     },
   })
 
-  if (!category) notFound()
+  if (!category) {
+    // Maybe this "category" slug is actually an old article slug (from HubSpot URLs like /knowledge/slug)
+    const article = await prisma.article.findUnique({
+      where: { slug: categorySlug },
+      include: { category: true },
+    })
+    if (article?.category) {
+      redirect(`/${validLocale}/knowledge/${article.category.slug}/${article.slug}`)
+    }
+    if (article) {
+      // Article exists but has no category
+      redirect(`/${validLocale}`)
+    }
+    notFound()
+  }
 
   const translation = category.translations[0]
 
