@@ -342,11 +342,14 @@ function CategoryRows({
           <GripVertical className="w-4 h-4" />
         </td>
         <td className="px-4 py-3">
-          <div className={`flex items-center gap-2.5 ${indent ? "pl-5" : ""}`}>
+          <button
+            onClick={() => setEditingId(isEditing ? null : cat.id)}
+            className={`flex items-center gap-2.5 ${indent ? "pl-5" : ""} hover:text-[#EC6E1E] transition-colors cursor-pointer`}
+          >
             {indent && <span className="text-gray-300 text-sm mr-0.5">↳</span>}
             <CatIcon size={indent ? 15 : 18} className="text-gray-500 shrink-0" strokeWidth={1.75} />
             <span className={`font-medium text-gray-900 ${indent ? "text-sm" : ""}`}>{en?.name ?? cat.slug}</span>
-          </div>
+          </button>
         </td>
         <td className="px-4 py-3 text-gray-500">{cat._count.articles}</td>
         <td className="px-4 py-3">
