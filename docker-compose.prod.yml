@@ -31,6 +31,8 @@ services:
       POSTMARK_API_KEY: ${POSTMARK_API_KEY}
       # Optional: override default From address for Postmark emails
       POSTMARK_FROM_EMAIL: ${POSTMARK_FROM_EMAIL:-support@dataandmore.com}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     volumes:
       # Persist uploads (videos, images) outside the container
       - ./uploads:/app/uploads
