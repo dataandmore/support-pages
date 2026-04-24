@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Pin, PinOff, ExternalLink } from "lucide-react"
 import { QuickLoginModal } from "./QuickLoginModal"
 import { HubspotPreviewModal } from "./HubspotPreviewModal"
@@ -29,11 +30,15 @@ export function ArticleAdminBar({
   const [pinned, setPinned] = useState(initialPinned)
   const [pinLoading, setPinLoading] = useState(false)
   const router = useRouter()
+  const { data: session } = useSession()
+
+  // Use client-side session as well (covers Google OAuth JWT)
+  const loggedIn = isAuthenticated || !!session?.user
 
   const editUrl = `/admin/articles/${articleId}`
 
   function handleEdit() {
-    if (isAuthenticated) {
+    if (loggedIn) {
       router.push(editUrl)
     } else {
       setShowLogin(true)
@@ -41,7 +46,7 @@ export function ArticleAdminBar({
   }
 
   async function handleTogglePin() {
-    if (!isAuthenticated) {
+    if (!loggedIn) {
       setShowLogin(true)
       return
     }
