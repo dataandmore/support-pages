@@ -115,17 +115,6 @@ function NavContent({
         })}
       </div>
 
-      {/* Admin link */}
-      <div className="pt-4 mt-4 border-t border-gray-100">
-        <Link
-          href="/admin"
-          onClick={onNavigate}
-          title={collapsed ? "Admin" : undefined}
-          className={`flex items-center ${collapsed ? "justify-center px-1" : "px-3"} py-2 text-xs text-gray-400 hover:text-[#EC6E1E] transition-colors rounded-lg hover:bg-gray-50`}
-        >
-          {collapsed ? "⚙" : "Admin"}
-        </Link>
-      </div>
     </div>
   )
 }
