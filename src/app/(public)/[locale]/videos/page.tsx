@@ -114,7 +114,7 @@ export default async function VideosPage({
                         </div>
                       </div>
                     ) : isSynthesia ? (
-                      <SynthesiaEmbed videoId={video.synthesiaId!} className="w-full h-full" />
+                      <SynthesiaEmbed videoId={video.synthesiaId!} locale={validLocale} className="w-full h-full" />
                     ) : hlsUrl ? (
                       <VideoPlayer src={hlsUrl} poster={posterUrl} className="w-full h-full" />
                     ) : (
