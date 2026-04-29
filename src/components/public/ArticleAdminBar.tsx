@@ -34,6 +34,8 @@ export function ArticleAdminBar({
 
   // Use client-side session as well (covers Google OAuth JWT)
   const loggedIn = isAuthenticated || !!session?.user
+  const role = session?.user?.role ?? ""
+  const isAdmin = loggedIn && (["ADMIN", "EDITOR"].includes(role) || (isAuthenticated && !session))
 
   const editUrl = `/admin/articles/${articleId}`
 
@@ -67,9 +69,11 @@ export function ArticleAdminBar({
     }
   }
 
+  if (!isAdmin) return null
+
   return (
     <>
-      {/* Floating pill — top-right corner of the article card */}
+      {/* Floating pill — top-right corner of the article card (admin only) */}
       <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5">
         {/* Pin to dashboard button — always visible (prompts login if unauthenticated) */}
         <button
