@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import {
   Upload,
   Trash2,
@@ -328,6 +328,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
 
 export default function VideosPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [videos, setVideos] = useState<Video[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -845,12 +846,16 @@ export default function VideosPage() {
       {editingVideo && (
         <EditModal
           video={editingVideo}
-          onClose={() => setEditingVideo(null)}
+          onClose={() => {
+            setEditingVideo(null)
+            if (searchParams.get("edit")) router.replace("/admin/videos", { scroll: false })
+          }}
           onSaved={(updated) => {
             setVideos((prev) =>
               prev.map((v) => (v.id === updated.id ? { ...v, ...updated } : v))
             )
             setEditingVideo(null)
+            if (searchParams.get("edit")) router.replace("/admin/videos", { scroll: false })
           }}
         />
       )}
