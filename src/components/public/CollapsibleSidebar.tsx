@@ -68,6 +68,38 @@ function NavContent({
       )}
       {collapsed && <div className="border-t border-gray-100 my-2" />}
 
+      {/* Ticket badge */}
+      {(() => {
+        const ticketLabels: Record<string, { title: string; text: string }> = {
+          en: { title: "Need more help? Create a ticket.", text: "Create a ticket" },
+          da: { title: "Brug for mere hjælp? Opret en sag.", text: "Opret en sag" },
+          sv: { title: "Behöver du mer hjälp? Skapa ett ärende.", text: "Skapa ett ärende" },
+          de: { title: "Brauchen Sie weitere Hilfe? Ein Ticket erstellen.", text: "Ein Ticket erstellen" },
+        }
+        const t = ticketLabels[locale] ?? ticketLabels.en
+        return (
+          <a
+            href="https://tickets.dataandmore.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title={t.title}
+            className={`flex items-center justify-center rounded-full bg-[#EC6E1E]/10 border border-[#EC6E1E]/20 hover:bg-[#EC6E1E]/20 hover:border-[#EC6E1E]/40 transition-all duration-200 group mb-3 ${
+              collapsed ? "w-10 h-10 mx-auto" : "gap-2 px-3 py-2"
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`text-[#EC6E1E] shrink-0 ${collapsed ? "w-5 h-5" : "w-3.5 h-3.5"}`}>
+              <path d="M15 5v2" /><path d="M15 11v2" /><path d="M15 17v2" />
+              <path d="M5 5h14a2 2 0 012 2v3a2 2 0 000 4v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-3a2 2 0 000-4V7a2 2 0 012-2z" />
+            </svg>
+            {!collapsed && (
+              <span className="text-[11px] font-medium text-[#EC6E1E] group-hover:underline whitespace-nowrap">
+                {t.text}
+              </span>
+            )}
+          </a>
+        )
+      })()}
+
       {/* Categories */}
       <div className="space-y-0.5 flex-1">
         {categories.map((cat) => {

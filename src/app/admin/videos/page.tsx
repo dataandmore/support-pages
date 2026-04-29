@@ -9,6 +9,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Languages,
   Lock,
   Unlock,
   Pin,
@@ -98,6 +99,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
   const [isGated, setIsGated] = useState(video.isGated)
   const [pinned, setPinned] = useState(video.pinned)
   const [saving, setSaving] = useState(false)
+  const [translating, setTranslating] = useState(false)
 
   const [translations, setTranslations] = useState<
     Record<Locale, { title: string; description: string }>
@@ -119,6 +121,36 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
       ...prev,
       [locale]: { ...prev[locale], [field]: value },
     }))
+  }
+
+  async function handleTranslate() {
+    if (activeLocale === "en") return
+    const en = translations.en
+    if (!en.title.trim()) return
+    setTranslating(true)
+    try {
+      const res = await fetch(`/api/videos/${video.id}/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: en.title,
+          description: en.description || null,
+          locale: activeLocale,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setTranslations((prev) => ({
+          ...prev,
+          [activeLocale]: {
+            title: data.title ?? prev[activeLocale].title,
+            description: data.description ?? prev[activeLocale].description,
+          },
+        }))
+      }
+    } finally {
+      setTranslating(false)
+    }
   }
 
   async function handleSave() {

@@ -91,6 +91,20 @@ export default async function HomePage({
     de: "Empfohlene Videos",
   }
 
+  const needHelpLabel: Record<string, string> = {
+    en: "Need more help?",
+    da: "Brug for mere hjælp?",
+    sv: "Behöver du mer hjälp?",
+    de: "Brauchen Sie weitere Hilfe?",
+  }
+
+  const createTicketLabel: Record<string, string> = {
+    en: "Create a ticket",
+    da: "Opret en sag",
+    sv: "Skapa ett ärende",
+    de: "Ein Ticket erstellen",
+  }
+
   return (
     <PublicShell locale={validLocale} hideSearch>
 
@@ -260,10 +274,10 @@ export default async function HomePage({
           className="block rounded-2xl border border-orange-200/60 bg-[#EC6E1E]/[0.07] backdrop-blur-sm text-center py-10 px-6 hover:bg-[#EC6E1E]/[0.13] hover:border-[#EC6E1E]/40 transition-all duration-200 group"
         >
           <p className="text-lg sm:text-xl font-semibold text-[#2A2A2C] mb-1">
-            Need more help?
+            {needHelpLabel[validLocale] ?? needHelpLabel.en}
           </p>
           <p className="text-sm text-[#EC6E1E] font-medium group-hover:underline">
-            Create a ticket &rarr;
+            {createTicketLabel[validLocale] ?? createTicketLabel.en} &rarr;
           </p>
         </a>
       </section>
