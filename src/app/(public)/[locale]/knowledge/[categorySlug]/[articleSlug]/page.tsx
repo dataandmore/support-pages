@@ -11,6 +11,7 @@ import { TableOfContents } from "@/components/public/TableOfContents"
 import { RelatedArticles } from "@/components/public/RelatedArticles"
 import { TranslationNotice } from "@/components/public/TranslationNotice"
 import { ArticleAdminBar } from "@/components/public/ArticleAdminBar"
+import { ShareButton } from "@/components/public/ShareButton"
 import { PageViewTracker } from "@/components/public/PageViewTracker"
 import { ArticleFeedback } from "@/components/public/ArticleFeedback"
 import type { Metadata } from "next"
@@ -160,6 +161,10 @@ export default async function ArticlePage({ params }: Props) {
                 {translation.title}
               </h1>
               <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
+                <ShareButton
+                  path={`/${validLocale}/knowledge/${categorySlug}/${articleSlug}`}
+                  className="p-1 rounded-md text-gray-300 hover:text-[#EC6E1E] hover:bg-gray-100 transition-colors"
+                />
                 <span>{readLabel[validLocale] ?? readLabel.en}</span>
                 {article.isGated && (
                   <span className="text-[#EC6E1E] font-medium">Members only</span>

@@ -5,6 +5,7 @@ import { PublicShell } from "@/components/public/PublicShell"
 import { VideoPlayer } from "@/components/public/VideoPlayer"
 import { SynthesiaEmbed } from "@/components/public/SynthesiaEmbed"
 import { AdminEditLink } from "@/components/public/AdminEditLink"
+import { ShareButton } from "@/components/public/ShareButton"
 import { auth } from "@/lib/auth"
 import type { Metadata } from "next"
 
@@ -145,11 +146,14 @@ export default async function VideosPage({
                         <h2 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">
                           {title}
                         </h2>
-                        {video.isGated && (
-                          <span className="shrink-0 text-xs bg-orange-100 text-[#EC6E1E] px-2 py-0.5 rounded-full border border-orange-200">
-                            Members
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <ShareButton path={`/${validLocale}/videos`} className="p-1 rounded-md text-gray-300 hover:text-[#EC6E1E] hover:bg-gray-100 transition-colors" />
+                          {video.isGated && (
+                            <span className="text-xs bg-orange-100 text-[#EC6E1E] px-2 py-0.5 rounded-full border border-orange-200">
+                              Members
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {description && (
                         <p className="text-xs text-gray-500 line-clamp-2 mt-1">{description}</p>

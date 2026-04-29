@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { AdminEditLink } from "./AdminEditLink"
+import { ShareButton } from "./ShareButton"
 
 interface ArticleCardProps {
   article: {
@@ -34,6 +35,9 @@ export function ArticleCard({ article, categorySlug, locale }: ArticleCardProps)
       href={`/${locale}/knowledge/${categorySlug}/${article.slug}`}
       className="group relative block bg-white rounded-xl border border-gray-200 p-5 hover:border-orange-300 hover:shadow-sm transition-all"
     >
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-0.5">
+        <ShareButton path={`/${locale}/knowledge/${categorySlug}/${article.slug}`} />
+      </div>
       <AdminEditLink href={`/admin/articles/${article.id}`} />
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
