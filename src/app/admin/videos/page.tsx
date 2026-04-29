@@ -645,7 +645,7 @@ export default function VideosPage() {
                   />
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600 w-20">Preview</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Title (EN)</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Title</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Duration</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Size</th>
@@ -655,9 +655,10 @@ export default function VideosPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {videos.map((video) => {
-                const enTitle =
-                  video.translations.find((t) => t.locale === "en")?.title ??
-                  video.originalFilename
+                const enTrans = video.translations.find((t) => t.locale === "en")
+                const firstTrans = video.translations[0]
+                const displayTitle = enTrans?.title ?? firstTrans?.title ?? video.originalFilename
+                const titleLocale = enTrans ? null : firstTrans?.locale ?? null
                 const cfg = statusConfig[video.status]
                 return (
                   <tr key={video.id} className={`transition-colors ${selectedIds.has(video.id) ? "bg-orange-50/50" : "hover:bg-gray-50"}`}>
@@ -701,7 +702,14 @@ export default function VideosPage() {
 
                     {/* Title + filename */}
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900 truncate max-w-xs">{enTitle}</p>
+                      <p className="font-medium text-gray-900 truncate max-w-xs flex items-center gap-1.5">
+                        {displayTitle}
+                        {titleLocale && (
+                          <span className="shrink-0 text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded uppercase">
+                            {titleLocale}
+                          </span>
+                        )}
+                      </p>
                       <p className="text-xs text-gray-400 truncate max-w-xs mt-0.5">
                         {video.originalFilename}
                       </p>
