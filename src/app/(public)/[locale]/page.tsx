@@ -251,6 +251,23 @@ export default async function HomePage({
         )}
       </section>
 
+      {/* ── Ticket CTA splash ── */}
+      <section className="w-full px-4 sm:px-6 lg:px-8 pb-12">
+        <a
+          href="https://tickets.dataandmore.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-2xl border border-orange-200/60 bg-[#EC6E1E]/[0.07] backdrop-blur-sm text-center py-10 px-6 hover:bg-[#EC6E1E]/[0.13] hover:border-[#EC6E1E]/40 transition-all duration-200 group"
+        >
+          <p className="text-lg sm:text-xl font-semibold text-[#2A2A2C] mb-1">
+            Need more help?
+          </p>
+          <p className="text-sm text-[#EC6E1E] font-medium group-hover:underline">
+            Create a ticket &rarr;
+          </p>
+        </a>
+      </section>
+
     </PublicShell>
   )
 }

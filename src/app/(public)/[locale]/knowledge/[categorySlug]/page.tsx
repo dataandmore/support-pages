@@ -42,6 +42,7 @@ export default async function CategoryPage({ params }: Props) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             where: { locale: validLocale as any, status: "PUBLISHED" },
           },
+          tags: { include: { tag: true } },
         },
       },
     },
