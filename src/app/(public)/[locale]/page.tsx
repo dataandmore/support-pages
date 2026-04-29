@@ -1,11 +1,12 @@
 import Link from "next/link"
-import { Pin } from "lucide-react"
+import { Pin, Play } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { isValidLocale, defaultLocale } from "@/lib/i18n"
 import { CategoryCard } from "@/components/public/CategoryCard"
 import { PublicShell } from "@/components/public/PublicShell"
 import { HeroSearch } from "@/components/public/HeroSearch"
 import { HeroVideo } from "@/components/public/HeroVideo"
+import { SynthesiaEmbed } from "@/components/public/SynthesiaEmbed"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default async function HomePage({
   const { locale } = await params
   const validLocale = isValidLocale(locale) ? locale : defaultLocale
 
-  const [categories, pinnedArticles] = await Promise.all([
+  const [categories, pinnedArticles, pinnedVideos] = await Promise.all([
     prisma.category.findMany({
       orderBy: { position: "asc" },
       include: {
@@ -41,6 +42,16 @@ export default async function HomePage({
           where: { locale: { in: [validLocale, "en"] } as any },
         },
         category: true,
+      },
+    }),
+    prisma.video.findMany({
+      where: { pinned: true, status: "READY" },
+      orderBy: { updatedAt: "desc" },
+      include: {
+        translations: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          where: { locale: { in: [validLocale, "en"] } as any },
+        },
       },
     }),
   ])
@@ -71,6 +82,13 @@ export default async function HomePage({
     da: "Udvalgte artikler",
     sv: "Utvalda artiklar",
     de: "Empfohlene Artikel",
+  }
+
+  const featuredVideoLabel: Record<string, string> = {
+    en: "Featured videos",
+    da: "Udvalgte videoer",
+    sv: "Utvalda videor",
+    de: "Empfohlene Videos",
   }
 
   return (
@@ -160,6 +178,54 @@ export default async function HomePage({
                     </p>
                   )}
                 </Link>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── Pinned / Featured videos ── */}
+      {pinnedVideos.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 pt-10 pb-2 w-full">
+          <div className="flex items-center gap-2 mb-5">
+            <Play size={13} className="text-[#EC6E1E] shrink-0" strokeWidth={2.5} />
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+              {featuredVideoLabel[validLocale] ?? featuredVideoLabel.en}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {pinnedVideos.map((video) => {
+              const t =
+                video.translations.find((tr) => tr.locale === validLocale) ??
+                video.translations.find((tr) => tr.locale === "en")
+              const title = t?.title ?? video.originalFilename
+              const description = t?.description ?? null
+              return (
+                <div
+                  key={video.id}
+                  className="bg-white rounded-2xl border border-orange-100 overflow-hidden hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
+                >
+                  <div className="aspect-video bg-gray-900">
+                    {video.synthesiaId ? (
+                      <SynthesiaEmbed videoId={video.synthesiaId} locale={validLocale} className="w-full h-full" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white/50 text-sm">
+                        Video
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-[#2A2A2C] text-sm leading-snug mb-1">
+                      {title}
+                    </h3>
+                    {description && (
+                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                        {description}
+                      </p>
+                    )}
+                  </div>
+                </div>
               )
             })}
           </div>

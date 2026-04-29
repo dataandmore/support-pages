@@ -1,5 +1,3 @@
-"use client"
-
 interface SynthesiaEmbedProps {
   videoId: string
   locale?: string
@@ -8,6 +6,7 @@ interface SynthesiaEmbedProps {
 
 export function SynthesiaEmbed({ videoId, locale, className }: SynthesiaEmbedProps) {
   const localeParam = locale ? `?language=${locale}` : ""
+
   return (
     <iframe
       src={`https://share.synthesia.io/embeds/videos/${videoId}${localeParam}`}

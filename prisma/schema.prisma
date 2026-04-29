@@ -210,6 +210,7 @@ model Video {
   synthesiaId      String?     @unique
   thumbnailUrl     String?
   isGated          Boolean     @default(false)
+  pinned           Boolean     @default(false)
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 

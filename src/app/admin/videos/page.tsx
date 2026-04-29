@@ -11,6 +11,7 @@ import {
   Clock,
   Lock,
   Unlock,
+  Pin,
   Play,
   X,
 } from "lucide-react"
@@ -41,6 +42,7 @@ interface Video {
   synthesiaId: string | null
   thumbnailUrl: string | null
   isGated: boolean
+  pinned: boolean
   createdAt: string
   translations: VideoTranslation[]
 }
@@ -94,6 +96,7 @@ interface EditModalProps {
 function EditModal({ video, onClose, onSaved }: EditModalProps) {
   const [activeLocale, setActiveLocale] = useState<Locale>("en")
   const [isGated, setIsGated] = useState(video.isGated)
+  const [pinned, setPinned] = useState(video.pinned)
   const [saving, setSaving] = useState(false)
 
   const [translations, setTranslations] = useState<
@@ -135,11 +138,11 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
           }),
         })
       }
-      // Update isGated separately.
+      // Update isGated + pinned separately.
       const res = await fetch(`/api/videos/${video.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isGated }),
+        body: JSON.stringify({ isGated, pinned }),
       })
       const data = await res.json()
       if (data.video) onSaved(data.video)
@@ -150,7 +153,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900">Edit video</h3>
@@ -197,7 +200,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
               value={translations[activeLocale].description}
               onChange={(e) => updateField(activeLocale, "description", e.target.value)}
               placeholder={`Description in ${LOCALE_LABELS[activeLocale]}`}
-              rows={3}
+              rows={6}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
             />
           </div>
@@ -228,6 +231,28 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
                   <Unlock className="w-3.5 h-3.5" /> Public
                 </>
               )}
+            </span>
+          </div>
+
+          {/* Pinned toggle */}
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              role="switch"
+              aria-checked={pinned}
+              onClick={() => setPinned((v) => !v)}
+              className={`relative w-10 h-6 rounded-full transition-colors ${
+                pinned ? "bg-[#EC6E1E]" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  pinned ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+            <span className="text-sm text-gray-700 flex items-center gap-1.5">
+              <Pin className="w-3.5 h-3.5" />
+              {pinned ? "Pinned to dashboard & videos page" : "Not pinned"}
             </span>
           </div>
         </div>
@@ -585,10 +610,10 @@ export default function VideosPage() {
             <p className="text-xs text-gray-400 mt-1">Upload your first video above</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <>
             {/* Bulk actions bar */}
             {selectedIds.size > 0 && (
-              <div className="flex items-center gap-3 px-4 py-2.5 bg-orange-50 border-b border-orange-100">
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-orange-50 border-b border-orange-100 rounded-t-2xl">
                 <span className="text-sm font-medium text-[#EC6E1E]">
                   {selectedIds.size} selected
                 </span>
@@ -608,6 +633,7 @@ export default function VideosPage() {
                 </button>
               </div>
             )}
+            <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="px-4 py-3 w-10">
@@ -747,6 +773,7 @@ export default function VideosPage() {
               })}
             </tbody>
           </table>
+          </>
         )}
       </div>
 

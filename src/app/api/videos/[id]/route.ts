@@ -59,6 +59,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     title?: string
     description?: string
     isGated?: boolean
+    pinned?: boolean
   }
   try {
     body = await req.json()
@@ -66,7 +67,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
   }
 
-  const { locale, title, description, isGated } = body
+  const { locale, title, description, isGated, pinned } = body
 
   // Upsert translation when locale + title are provided.
   if (locale && title) {
@@ -90,9 +91,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     })
   }
 
-  // Update isGated flag on the video itself if provided.
-  if (isGated !== undefined) {
-    await prisma.video.update({ where: { id }, data: { isGated } })
+  // Update video-level flags if provided.
+  const videoUpdate: { isGated?: boolean; pinned?: boolean } = {}
+  if (isGated !== undefined) videoUpdate.isGated = isGated
+  if (pinned !== undefined) videoUpdate.pinned = pinned
+  if (Object.keys(videoUpdate).length > 0) {
+    await prisma.video.update({ where: { id }, data: videoUpdate })
   }
 
   const video = await prisma.video.findUnique({
