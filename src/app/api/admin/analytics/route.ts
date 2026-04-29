@@ -44,13 +44,24 @@ export async function GET(req: NextRequest) {
     // Total searches
     prisma.searchQuery.count({ where: dateFilter }),
 
-    // Top referrer domains
+    // Top referrer domains (exclude internal domains, take 50)
     prisma.pageView.groupBy({
       by: ["referrerDomain"],
-      where: { ...dateFilter, referrerDomain: { not: null } },
+      where: {
+        ...dateFilter,
+        referrerDomain: {
+          not: null,
+          notIn: [
+            "cs.dataandmore.com",
+            "dataandmore.com",
+            "www.dataandmore.com",
+            "localhost",
+          ],
+        },
+      },
       _count: { referrerDomain: true },
       orderBy: { _count: { referrerDomain: "desc" } },
-      take: 10,
+      take: 50,
     }),
 
     // Most popular articles by views

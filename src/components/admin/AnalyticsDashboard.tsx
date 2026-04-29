@@ -147,26 +147,28 @@ export function AnalyticsDashboard() {
           )}
         </div>
 
-        {/* Top Referrer Domains */}
+        {/* Top User Domains */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6">
           <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <Globe className="w-4 h-4 text-[#EC6E1E]" />
-            Top Referrer Domains
+            Top User Domains
           </h3>
+          <p className="text-[10px] text-gray-400 -mt-3 mb-3">Referrer domains excluding dataandmore.com</p>
           {data.topDomains.length === 0 ? (
             <p className="text-sm text-gray-400">No referrer data yet.</p>
           ) : (
-            <div className="space-y-2">
-              {data.topDomains.map((domain) => {
-                const pct = data.totalViews > 0 ? Math.round((domain.count / data.totalViews) * 100) : 0
+            <div className="space-y-1.5 max-h-[600px] overflow-y-auto">
+              {data.topDomains.map((domain, i) => {
+                const maxCount = data.topDomains[0]?.count ?? 1
+                const pct = Math.round((domain.count / maxCount) * 100)
                 return (
                   <div key={domain.domain} className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-400 w-5 text-right tabular-nums">{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between mb-0.5">
                         <span className="text-sm text-gray-700 truncate">{domain.domain}</span>
-                        <span className="text-xs text-gray-400 ml-2">{pct}%</span>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-[#EC6E1E] rounded-full"
                           style={{ width: `${pct}%` }}
