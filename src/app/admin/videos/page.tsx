@@ -197,8 +197,8 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
           </button>
         </div>
 
-        {/* Locale tabs */}
-        <div className="flex gap-1 px-6 pt-4">
+        {/* Locale tabs + translate button */}
+        <div className="flex items-center gap-1 px-6 pt-4">
           {LOCALES.map((loc) => (
             <button
               key={loc}
@@ -212,6 +212,16 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
               {LOCALE_LABELS[loc]}
             </button>
           ))}
+          {activeLocale !== "en" && (
+            <button
+              onClick={handleTranslate}
+              disabled={translating || !translations.en.title.trim()}
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#EC6E1E] border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors disabled:opacity-40 cursor-pointer"
+            >
+              <Languages className="w-3.5 h-3.5" />
+              {translating ? "Translating…" : `Translate from EN`}
+            </button>
+          )}
         </div>
 
         {/* Fields */}
