@@ -46,3 +46,5 @@ services:
 
 volumes:
   postgres_data:
+    external: true
+    name: support-portal_postgres_data
