@@ -223,6 +223,7 @@ model VideoTranslation {
   locale      Locale
   title       String
   description String? @db.Text
+  synthesiaId String?
 
   video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
 

@@ -703,6 +703,9 @@ export default function VideosPage() {
                     {/* Title + filename */}
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-900 truncate max-w-xs flex items-center gap-1.5">
+                        {video.pinned && (
+                          <Pin className="w-3.5 h-3.5 text-[#EC6E1E] shrink-0" />
+                        )}
                         {displayTitle}
                         {titleLocale && (
                           <span className="shrink-0 text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded uppercase">

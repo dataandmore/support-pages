@@ -93,7 +93,8 @@ export default async function VideosPage({
                 const description = translation?.description ?? null
                 const locked = video.isGated && !isAuthenticated
 
-                const isSynthesia = !!video.synthesiaId
+                const localeSynthesiaId = translation?.synthesiaId ?? video.synthesiaId
+                const isSynthesia = !!localeSynthesiaId
                 const hlsUrl = video.hlsPath
                   ? `/api/stream/${video.hlsPath}`
                   : null
@@ -128,7 +129,7 @@ export default async function VideosPage({
                           </div>
                         </div>
                       ) : isSynthesia ? (
-                        <SynthesiaEmbed videoId={video.synthesiaId!} locale={validLocale} className="w-full h-full" />
+                        <SynthesiaEmbed videoId={localeSynthesiaId!} locale={validLocale} className="w-full h-full" />
                       ) : hlsUrl ? (
                         <VideoPlayer src={hlsUrl} poster={posterUrl} className="w-full h-full" />
                       ) : (

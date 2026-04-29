@@ -207,8 +207,8 @@ export default async function HomePage({
                   className="bg-white rounded-2xl border border-orange-100 overflow-hidden hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
                 >
                   <div className="aspect-video bg-gray-900">
-                    {video.synthesiaId ? (
-                      <SynthesiaEmbed videoId={video.synthesiaId} locale={validLocale} className="w-full h-full" />
+                    {(t?.synthesiaId ?? video.synthesiaId) ? (
+                      <SynthesiaEmbed videoId={(t?.synthesiaId ?? video.synthesiaId)!} locale={validLocale} className="w-full h-full" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white/50 text-sm">
                         Video
