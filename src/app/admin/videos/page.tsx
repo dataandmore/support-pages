@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import {
   Upload,
   Trash2,
@@ -326,6 +327,7 @@ function EditModal({ video, onClose, onSaved }: EditModalProps) {
 // ---------------------------------------------------------------------------
 
 export default function VideosPage() {
+  const searchParams = useSearchParams()
   const [videos, setVideos] = useState<Video[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -381,6 +383,15 @@ export default function VideosPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Auto-open edit modal from ?edit=VIDEO_ID
+  useEffect(() => {
+    const editId = searchParams.get("edit")
+    if (editId && videos.length > 0 && !editingVideo) {
+      const video = videos.find((v) => v.id === editId)
+      if (video) setEditingVideo(video)
+    }
+  }, [searchParams, videos, editingVideo])
 
   async function loadVideos() {
     setLoading(true)

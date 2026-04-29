@@ -108,7 +108,7 @@ export default async function VideosPage({
                     key={video.id}
                     className="group relative bg-white rounded-2xl border border-orange-100 overflow-hidden flex flex-col hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
                   >
-                    <AdminEditLink href="/admin/videos" />
+                    <AdminEditLink href={`/admin/videos?edit=${video.id}`} />
                     <div className="relative aspect-video bg-gray-900">
                       {locked ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">

@@ -221,7 +221,7 @@ export default async function HomePage({
                   key={video.id}
                   className="group relative bg-white rounded-2xl border border-orange-100 overflow-hidden hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
                 >
-                  <AdminEditLink href="/admin/videos" />
+                  <AdminEditLink href={`/admin/videos?edit=${video.id}`} />
                   <div className="aspect-video bg-gray-900">
                     {(t?.synthesiaId ?? video.synthesiaId) ? (
                       <SynthesiaEmbed videoId={(t?.synthesiaId ?? video.synthesiaId)!} locale={validLocale} className="w-full h-full" />
