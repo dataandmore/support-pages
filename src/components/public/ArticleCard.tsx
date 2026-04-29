@@ -1,7 +1,9 @@
 import Link from "next/link"
+import { AdminEditLink } from "./AdminEditLink"
 
 interface ArticleCardProps {
   article: {
+    id: string
     slug: string
     isGated: boolean
     translations: { title: string; excerpt: string | null }[]
@@ -30,8 +32,9 @@ export function ArticleCard({ article, categorySlug, locale }: ArticleCardProps)
   return (
     <Link
       href={`/${locale}/knowledge/${categorySlug}/${article.slug}`}
-      className="group block bg-white rounded-xl border border-gray-200 p-5 hover:border-orange-300 hover:shadow-sm transition-all"
+      className="group relative block bg-white rounded-xl border border-gray-200 p-5 hover:border-orange-300 hover:shadow-sm transition-all"
     >
+      <AdminEditLink href={`/admin/articles/${article.id}`} />
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
           <h3 className="font-medium text-gray-900 group-hover:text-[#EC6E1E] transition-colors">

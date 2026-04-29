@@ -4,6 +4,7 @@ import { isValidLocale, defaultLocale } from "@/lib/i18n"
 import { PublicShell } from "@/components/public/PublicShell"
 import { VideoPlayer } from "@/components/public/VideoPlayer"
 import { SynthesiaEmbed } from "@/components/public/SynthesiaEmbed"
+import { AdminEditLink } from "@/components/public/AdminEditLink"
 import { auth } from "@/lib/auth"
 import type { Metadata } from "next"
 
@@ -105,8 +106,9 @@ export default async function VideosPage({
                 return (
                   <article
                     key={video.id}
-                    className="bg-white rounded-2xl border border-orange-100 overflow-hidden flex flex-col hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
+                    className="group relative bg-white rounded-2xl border border-orange-100 overflow-hidden flex flex-col hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
                   >
+                    <AdminEditLink href="/admin/videos" />
                     <div className="relative aspect-video bg-gray-900">
                       {locked ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
@@ -189,8 +191,9 @@ export default async function VideosPage({
               return (
                 <article
                   key={video.id}
-                  className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col"
+                  className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col"
                 >
+                  <AdminEditLink href="/admin/videos" />
                   {/* Player / embed / locked overlay */}
                   <div className="relative aspect-video bg-gray-900">
                     {locked ? (

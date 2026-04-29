@@ -7,6 +7,7 @@ import { PublicShell } from "@/components/public/PublicShell"
 import { HeroSearch } from "@/components/public/HeroSearch"
 import { HeroVideo } from "@/components/public/HeroVideo"
 import { SynthesiaEmbed } from "@/components/public/SynthesiaEmbed"
+import { AdminEditLink } from "@/components/public/AdminEditLink"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -218,8 +219,9 @@ export default async function HomePage({
               return (
                 <div
                   key={video.id}
-                  className="bg-white rounded-2xl border border-orange-100 overflow-hidden hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
+                  className="group relative bg-white rounded-2xl border border-orange-100 overflow-hidden hover:border-[#EC6E1E] hover:shadow-md transition-all duration-200"
                 >
+                  <AdminEditLink href="/admin/videos" />
                   <div className="aspect-video bg-gray-900">
                     {(t?.synthesiaId ?? video.synthesiaId) ? (
                       <SynthesiaEmbed videoId={(t?.synthesiaId ?? video.synthesiaId)!} locale={validLocale} className="w-full h-full" />
