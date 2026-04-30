@@ -147,7 +147,7 @@ export default async function VideosPage({
                           {title}
                         </h2>
                         <div className="flex items-center gap-1 shrink-0">
-                          <ShareButton path={`/${validLocale}/videos`} className="p-1 rounded-md text-gray-300 hover:text-[#EC6E1E] hover:bg-gray-100 transition-colors" />
+                          <ShareButton path={`/${validLocale}/videos`} className="p-1 rounded-md text-gray-400 hover:text-[#EC6E1E] hover:bg-orange-50 transition-colors" />
                           {video.isGated && (
                             <span className="text-xs bg-orange-100 text-[#EC6E1E] px-2 py-0.5 rounded-full border border-orange-200">
                               Members

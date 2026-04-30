@@ -163,7 +163,7 @@ export default async function ArticlePage({ params }: Props) {
               <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
                 <ShareButton
                   path={`/${validLocale}/knowledge/${categorySlug}/${articleSlug}`}
-                  className="p-1 rounded-md text-gray-300 hover:text-[#EC6E1E] hover:bg-gray-100 transition-colors"
+                  className="p-1 rounded-md text-gray-400 hover:text-[#EC6E1E] hover:bg-orange-50 transition-colors"
                 />
                 <span>{readLabel[validLocale] ?? readLabel.en}</span>
                 {article.isGated && (

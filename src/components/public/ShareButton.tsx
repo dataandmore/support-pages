@@ -30,7 +30,7 @@ export function ShareButton({ path, className }: ShareButtonProps) {
     <button
       onClick={handleShare}
       title={copied ? "Link copied!" : "Share"}
-      className={className ?? "p-1.5 rounded-md text-gray-300 hover:text-[#EC6E1E] hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100"}
+      className={className ?? "p-1.5 rounded-md text-gray-400 hover:text-[#EC6E1E] hover:bg-orange-50 transition-colors"}
     >
       {copied ? (
         <Check className="w-3.5 h-3.5 text-green-500" />
