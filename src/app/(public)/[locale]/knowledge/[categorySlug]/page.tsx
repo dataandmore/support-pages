@@ -58,9 +58,61 @@ export default async function CategoryPage({ params }: Props) {
       redirect(`/${validLocale}/knowledge/${article.category.slug}/${article.slug}`)
     }
     if (article) {
-      // Article exists but has no category
       redirect(`/${validLocale}`)
     }
+
+    // Old HubSpot URLs used localized slugs (e.g. Danish slugs for DA articles).
+    // Convert the slug to search words and find a matching article translation.
+    const searchWords = decodeURIComponent(categorySlug)
+      .replace(/-/g, " ")
+      .replace(/[^a-zA-Z0-9\u00C0-\u024F\s]/g, "")
+      .trim()
+    if (searchWords.length > 2) {
+      const match = await prisma.articleTranslation.findFirst({
+        where: {
+          title: { contains: searchWords, mode: "insensitive" },
+        },
+        include: { article: { include: { category: true } } },
+      })
+      if (match?.article?.category) {
+        redirect(`/${validLocale}/knowledge/${match.article.category.slug}/${match.article.slug}`)
+      }
+      if (match?.article) {
+        redirect(`/${validLocale}`)
+      }
+
+      // Try with word stems for partial matches — progressively relax
+      const words = searchWords.split(/\s+/).filter((w) => w.length >= 4)
+      if (words.length >= 2) {
+        const stems = words.map((w) => w.slice(0, Math.min(w.length, 5)))
+
+        // First: try ALL stems together
+        if (stems.length >= 2) {
+          const allMatch = await prisma.articleTranslation.findFirst({
+            where: { AND: stems.map((s) => ({ title: { contains: s, mode: "insensitive" as const } })) },
+            include: { article: { include: { category: true } } },
+          })
+          if (allMatch?.article?.category) {
+            redirect(`/${validLocale}/knowledge/${allMatch.article.category.slug}/${allMatch.article.slug}`)
+          }
+        }
+
+        // Then: drop one stem at a time (longest stems first = most specific)
+        const sortedStems = [...stems].sort((a, b) => b.length - a.length)
+        for (let drop = 0; drop < sortedStems.length - 1; drop++) {
+          const subset = sortedStems.filter((_, i) => i !== drop)
+          if (subset.length < 2) continue
+          const partialMatch = await prisma.articleTranslation.findFirst({
+            where: { AND: subset.map((s) => ({ title: { contains: s, mode: "insensitive" as const } })) },
+            include: { article: { include: { category: true } } },
+          })
+          if (partialMatch?.article?.category) {
+            redirect(`/${validLocale}/knowledge/${partialMatch.article.category.slug}/${partialMatch.article.slug}`)
+          }
+        }
+      }
+    }
+
     notFound()
   }
 
