@@ -8,6 +8,7 @@ import { HeroSearch } from "@/components/public/HeroSearch"
 import { HeroVideo } from "@/components/public/HeroVideo"
 import { SynthesiaEmbed } from "@/components/public/SynthesiaEmbed"
 import { AdminEditLink } from "@/components/public/AdminEditLink"
+import { McpConnectCard } from "@/components/public/McpConnectCard"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -266,6 +267,9 @@ export default async function HomePage({
           </div>
         )}
       </section>
+
+      {/* ── MCP Connect card ── */}
+      <McpConnectCard />
 
       {/* ── Ticket CTA splash ── */}
       <section className="w-full px-4 sm:px-6 lg:px-8 pb-12">
