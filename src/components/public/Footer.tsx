@@ -28,7 +28,7 @@ export function Footer() {
               Website
             </a>
             <a
-              href="https://dataandmore.com/privacy"
+              href="https://dataandmore.com/privacy-policy"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-white transition-colors"
