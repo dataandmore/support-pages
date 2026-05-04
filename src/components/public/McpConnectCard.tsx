@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 
+const MCP_URL = "https://cs.dataandmore.com/api/mcp"
+
 const MCP_CONFIG = JSON.stringify(
   {
     mcpServers: {
       "dam-support": {
-        command: "node",
-        args: ["./mcp-server/dist/index.js"],
-        env: { DAM_SUPPORT_URL: "https://cs.dataandmore.com" },
+        url: MCP_URL,
       },
     },
   },
@@ -16,30 +16,31 @@ const MCP_CONFIG = JSON.stringify(
   2
 )
 
-const GITHUB_URL = "https://github.com/djunge/dam-support-portal/tree/main/mcp-server"
-
 export function McpConnectCard() {
   const [showConfig, setShowConfig] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<"url" | "config" | null>(null)
 
-  function handleCopy() {
-    navigator.clipboard.writeText(MCP_CONFIG)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  function copy(text: string, which: "url" | "config") {
+    navigator.clipboard.writeText(text)
+    setCopied(which)
+    setTimeout(() => setCopied(null), 2000)
   }
 
   return (
     <section className="w-full px-4 sm:px-6 lg:px-8 pb-6">
       <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        {/* Header */}
         <button
           onClick={() => setShowConfig(!showConfig)}
           className="w-full flex items-center gap-4 px-6 py-5 text-left hover:bg-gray-50/50 transition-colors"
         >
-          {/* Claude logo */}
           <div className="w-10 h-10 rounded-xl bg-[#2A2A2C] flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#EC6E1E]" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#EC6E1E]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+              <polyline points="7.5 4.21 12 6.81 16.5 4.21" />
+              <polyline points="7.5 19.79 7.5 14.6 3 12" />
+              <polyline points="21 12 16.5 14.6 16.5 19.79" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
@@ -47,7 +48,7 @@ export function McpConnectCard() {
               Connect to Claude
             </p>
             <p className="text-xs text-gray-500">
-              Use our knowledge base as an MCP tool in Claude Desktop, Claude Code, or any MCP client
+              Search our knowledge base directly from Claude Desktop or Claude Code
             </p>
           </div>
           <span className="text-gray-400 text-lg shrink-0">
@@ -55,30 +56,43 @@ export function McpConnectCard() {
           </span>
         </button>
 
-        {/* Expandable config section */}
         {showConfig && (
           <div className="border-t border-gray-100 px-6 py-5 space-y-4">
+            {/* URL copy */}
             <div>
               <p className="text-xs font-medium text-gray-500 mb-2">
-                1. Clone and build the MCP server
+                MCP Server URL
               </p>
-              <div className="bg-gray-900 rounded-lg p-3 text-xs font-mono text-gray-300 overflow-x-auto">
-                <span className="text-gray-500">$</span> git clone https://github.com/djunge/dam-support-portal.git<br />
-                <span className="text-gray-500">$</span> cd dam-support-portal/mcp-server<br />
-                <span className="text-gray-500">$</span> npm install && npm run build
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-gray-100 rounded-lg px-3 py-2 text-xs font-mono text-[#2A2A2C] truncate">
+                  {MCP_URL}
+                </code>
+                <button
+                  onClick={() => copy(MCP_URL, "url")}
+                  className="shrink-0 px-3 py-2 rounded-lg bg-[#EC6E1E] text-white text-xs font-medium hover:bg-[#d4601a] transition-colors"
+                >
+                  {copied === "url" ? "Copied!" : "Copy"}
+                </button>
               </div>
             </div>
 
+            {/* Instructions */}
+            <div className="text-xs text-gray-600 leading-relaxed space-y-1.5">
+              <p><strong>Claude Desktop:</strong> Settings &rarr; Developer &rarr; Edit Config &rarr; paste the config below</p>
+              <p><strong>Claude Code:</strong> Add to <span className="font-mono text-[11px]">~/.claude/.mcp.json</span></p>
+            </div>
+
+            {/* Config JSON */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-medium text-gray-500">
-                  2. Add to your Claude config
+                  Configuration
                 </p>
                 <button
-                  onClick={handleCopy}
+                  onClick={() => copy(MCP_CONFIG, "config")}
                   className="text-[10px] font-medium text-[#EC6E1E] hover:underline"
                 >
-                  {copied ? "Copied!" : "Copy JSON"}
+                  {copied === "config" ? "Copied!" : "Copy JSON"}
                 </button>
               </div>
               <pre className="bg-gray-900 rounded-lg p-3 text-xs font-mono text-gray-300 overflow-x-auto whitespace-pre">
@@ -86,20 +100,9 @@ export function McpConnectCard() {
               </pre>
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#EC6E1E] font-medium hover:underline"
-              >
-                View on GitHub &rarr;
-              </a>
-              <span className="text-gray-300">|</span>
-              <p className="text-xs text-gray-400">
-                5 tools: search, list-categories, list-articles, get-article, list-videos
-              </p>
-            </div>
+            <p className="text-xs text-gray-400 pt-1">
+              5 tools: search, categories, articles, get-article, videos &middot; Supports EN, DA, SV, DE
+            </p>
           </div>
         )}
       </div>
