@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-const MCP_URL = "https://cs.dataandmore.com/api/mcp"
+const MCP_URL = "https://support.dataandmore.com/api/mcp"
 
 const MCP_CONFIG = JSON.stringify(
   {
