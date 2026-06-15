@@ -1,8 +1,7 @@
 # Deploys support.dataandmore.com on every push to main (after secrets are configured).
 #
 # One-time setup — GitHub → Settings → Secrets and variables → Actions → New repository secret:
-#   DEPLOY_USER     SSH username on the Hetzner server (e.g. root or ubuntu)
-#   DEPLOY_SSH_KEY  Full private key (PEM) that can SSH to the server
+#   DEPLOY_SSH_KEY  Full private key (PEM) for djunge@89.167.19.63
 #
 # Optional:
 #   DEPLOY_PORT     SSH port if not 22
@@ -22,6 +21,7 @@ concurrency:
 
 env:
   DEPLOY_HOST: 89.167.19.63
+  DEPLOY_USER: djunge
   DEPLOY_PATH: /opt/support-portal
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ env.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
+          username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           script_stop: true
