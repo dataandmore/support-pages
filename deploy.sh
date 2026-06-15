@@ -33,6 +33,18 @@ echo "🔨 Building Docker image..."
 docker build -t support-portal:latest .
 
 # ── Recreate app container ─────────────────────────────────────────────────
+echo "🗄️  Ensuring database is running..."
+docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" start db 2>/dev/null \
+  || docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d db
+
+echo "🧹 Freeing port 3000..."
+for cid in $(docker ps -q); do
+  if docker port "$cid" 2>/dev/null | grep -qE '(:3000|3000->)'; then
+    echo "   Removing container $cid still bound to port 3000"
+    docker rm -f "$cid"
+  fi
+done
+
 echo "🔄 Restarting app container..."
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" rm -sf app
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
