@@ -68,7 +68,17 @@ jobs:
             set -euo pipefail
             APP_DIR="${{ env.DEPLOY_PATH }}"
             mkdir -p "$APP_DIR"
+
+            # Preserve server-only state; remove stale source tree (fixes nested src/src/).
+            if [ -f "$APP_DIR/.env.prod" ]; then cp "$APP_DIR/.env.prod" /tmp/.env.prod.bak; fi
+            if [ -d "$APP_DIR/uploads" ]; then rm -rf /tmp/uploads-bak && cp -a "$APP_DIR/uploads" /tmp/uploads-bak; fi
+            find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name uploads -exec rm -rf {} +
+
             tar xzf /tmp/release.tar.gz -C "$APP_DIR"
             rm -f /tmp/release.tar.gz
+
+            if [ -f /tmp/.env.prod.bak ]; then mv /tmp/.env.prod.bak "$APP_DIR/.env.prod"; fi
+            if [ -d /tmp/uploads-bak ]; then rm -rf "$APP_DIR/uploads" && mv /tmp/uploads-bak "$APP_DIR/uploads"; fi
+
             cd "$APP_DIR"
             ./deploy.sh
