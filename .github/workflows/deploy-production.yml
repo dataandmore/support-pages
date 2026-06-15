@@ -25,7 +25,6 @@ concurrency:
 env:
   DEPLOY_HOST: 89.167.19.63
   DEPLOY_USER: root
-  DEPLOY_PATH: /opt/support-portal
 
 jobs:
   deploy:
@@ -43,7 +42,43 @@ jobs:
           command_timeout: 40m
           script: |
             set -euo pipefail
-            cd "${{ env.DEPLOY_PATH }}"
+
+            find_repo() {
+              for dir in \
+                /opt/support-portal \
+                /srv/support-portal \
+                /root/support-portal \
+                /root/support-pages \
+                /opt/support-pages; do
+                if [ -d "$dir/.git" ]; then
+                  echo "$dir"
+                  return 0
+                fi
+              done
+              local deploy_sh
+              deploy_sh=$(find /opt /root /srv /home -maxdepth 5 -name deploy.sh -type f 2>/dev/null | head -1 || true)
+              if [ -n "$deploy_sh" ]; then
+                dirname "$deploy_sh"
+                return 0
+              fi
+              return 1
+            }
+
+            REPO_DIR=$(find_repo) || {
+              echo "❌ Could not locate support portal repo on server"
+              echo "Checked /opt/support-portal, /srv/support-portal, /root/*, and deploy.sh under /opt /root /srv /home"
+              ls -la /opt/ /root/ /srv/ 2>/dev/null || true
+              exit 1
+            }
+
+            echo "📂 Deploying from $REPO_DIR"
+            cd "$REPO_DIR"
+
+            if [ ! -d .git ]; then
+              echo "❌ $REPO_DIR has deploy.sh but is not a git repository"
+              exit 1
+            fi
+
             git fetch origin main
             git reset --hard origin/main
             ./deploy.sh
