@@ -34,8 +34,9 @@ docker build -t support-portal:latest .
 
 # ── Recreate app container ─────────────────────────────────────────────────
 echo "🔄 Restarting app container..."
+docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" rm -sf app
 docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
-  up -d --force-recreate --no-deps app
+  up -d --no-deps app
 
 # ── Wait for container to be healthy ──────────────────────────────────────
 echo "⏳ Waiting for app to start..."
