@@ -43,7 +43,7 @@ jobs:
             --exclude=uploads \
             --exclude=.git \
             --exclude=release.tar.gz \
-            .
+            . || [[ $? -eq 1 ]]
 
       - name: Upload release to server
         uses: appleboy/scp-action@v0.1.7
