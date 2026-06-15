@@ -70,8 +70,13 @@ done
 
 # ── Database migrations ────────────────────────────────────────────────────
 echo "🗄️  Running database migrations..."
-docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
-  exec app npx prisma migrate deploy
+if docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
+  exec -T app sh -c 'test -f prisma/schema.prisma || test -f /app/prisma/schema.prisma' 2>/dev/null; then
+  docker compose -f docker-compose.prod.yml --env-file "$ENV_FILE" \
+    exec app npx prisma migrate deploy
+else
+  echo "   ⏭️  Skipped (standalone app image — run migrations manually if schema changed)"
+fi
 
 echo ""
 echo "✅ Deploy complete!"
