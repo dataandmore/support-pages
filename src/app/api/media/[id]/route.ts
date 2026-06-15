@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import path from "path"
 import fs from "fs/promises"
 import { auth } from "@/lib/auth"
+import { canWrite } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
@@ -12,7 +13,7 @@ type Params = { params: Promise<{ id: string }> }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const session = await auth()
-  if (!session || !["ADMIN", "EDITOR"].includes(session.user.role ?? "")) {
+  if (!session || !canWrite(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

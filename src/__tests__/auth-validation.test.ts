@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest"
+import { canWrite, canManageUsers } from "@/lib/permissions"
 
 // ---------------------------------------------------------------------------
 // Test the credential shape validation logic that mirrors auth.ts
@@ -52,16 +53,6 @@ describe("credential validation", () => {
 // ---------------------------------------------------------------------------
 // Role hierarchy checks (mirrors middleware and API guard logic)
 // ---------------------------------------------------------------------------
-
-type Role = "ADMIN" | "EDITOR" | "VIEWER"
-
-function canWrite(role: Role | undefined): boolean {
-  return role === "ADMIN" || role === "EDITOR"
-}
-
-function canManageUsers(role: Role | undefined): boolean {
-  return role === "ADMIN"
-}
 
 describe("role checks", () => {
   it("ADMIN can write and manage users", () => {
