@@ -1,7 +1,10 @@
 # Deploys support.dataandmore.com on every push to main (after secrets are configured).
 #
-# One-time setup — GitHub → Settings → Secrets and variables → Actions → New repository secret:
-#   DEPLOY_SSH_KEY  Full private key (PEM) for djunge@89.167.19.63
+# Production server access (local):
+#   ssh -i ~/.ssh/hetzner_claude -o IdentitiesOnly=yes root@89.167.19.63
+#
+# One-time setup — GitHub → Settings → Secrets and variables → Actions:
+#   DEPLOY_SSH_KEY  Contents of ~/.ssh/hetzner_claude (private key)
 #
 # Optional:
 #   DEPLOY_PORT     SSH port if not 22
@@ -21,7 +24,7 @@ concurrency:
 
 env:
   DEPLOY_HOST: 89.167.19.63
-  DEPLOY_USER: djunge
+  DEPLOY_USER: root
   DEPLOY_PATH: /opt/support-portal
 
 jobs:
