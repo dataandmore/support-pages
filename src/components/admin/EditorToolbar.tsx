@@ -17,6 +17,7 @@ interface EditorToolbarProps {
   editor: Editor | null
   onImageUpload?: () => void
   onVideoInsert?: () => void
+  imageUploading?: boolean
 }
 
 function ToolbarButton({
@@ -260,7 +261,7 @@ function LinkPopover({ editor, onClose }: { editor: Editor; onClose: () => void 
   )
 }
 
-export function EditorToolbar({ editor, onImageUpload, onVideoInsert }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onImageUpload, onVideoInsert, imageUploading }: EditorToolbarProps) {
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false)
 
   const toggleLinkPopover = useCallback(() => {
@@ -350,7 +351,7 @@ export function EditorToolbar({ editor, onImageUpload, onVideoInsert }: EditorTo
         )}
       </div>
       {onImageUpload && (
-        <ToolbarButton onClick={onImageUpload} title="Insert image">
+        <ToolbarButton onClick={onImageUpload} title="Insert image" disabled={imageUploading}>
           <ImageIcon className="w-4 h-4" />
         </ToolbarButton>
       )}

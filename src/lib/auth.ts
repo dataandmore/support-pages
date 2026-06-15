@@ -94,10 +94,23 @@ const authConfig: NextAuthConfig = {
       }
       return token
     },
-    session({ session, token }) {
+    session: async ({ session, token }) => {
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+
+        // Keep role in sync with the database so permission changes take effect
+        // without requiring users to sign out and back in.
+        if (session.user.email) {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: session.user.email.toLowerCase() },
+            select: { id: true, role: true },
+          })
+          if (dbUser) {
+            session.user.id = dbUser.id
+            session.user.role = dbUser.role
+          }
+        }
       }
       return session
     },

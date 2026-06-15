@@ -14,20 +14,42 @@ import { LinkBubbleMenu } from "./LinkBubbleMenu"
 import { MediaPicker } from "./MediaPicker"
 import { VideoPicker, type VideoInsertion } from "./VideoPicker"
 import { VideoEmbed } from "@/lib/tiptap-video-embed"
-import { useState } from "react"
+import { uploadImage } from "@/lib/upload-image"
+import { useCallback, useEffect, useRef, useState } from "react"
+import type { Editor } from "@tiptap/react"
 
 interface RichEditorProps {
   content?: unknown
   onChange?: (content: unknown) => void
   /** Render content read-only — no toolbar, no cursor, same prose styles. Used for preview. */
   readOnly?: boolean
-  onImageUpload?: (file: File) => Promise<string>
   placeholder?: string
 }
 
-export function RichEditor({ content, onChange, onImageUpload, readOnly = false }: RichEditorProps) {
+function insertImageUrl(editor: Editor, url: string) {
+  editor.chain().focus().setImage({ src: url }).run()
+}
+
+export function RichEditor({ content, onChange, readOnly = false }: RichEditorProps) {
   const [showMediaPicker, setShowMediaPicker] = useState(false)
   const [showVideoPicker, setShowVideoPicker] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const editorRef = useRef<Editor | null>(null)
+
+  const handleImageFile = useCallback(async (file: File) => {
+    const editor = editorRef.current
+    if (!editor || !file.type.startsWith("image/")) return
+
+    setUploadingImage(true)
+    try {
+      const url = await uploadImage(file)
+      insertImageUrl(editor, url)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Image upload failed")
+    } finally {
+      setUploadingImage(false)
+    }
+  }, [])
 
   const editor = useEditor({
     extensions: [
@@ -50,11 +72,33 @@ export function RichEditor({ content, onChange, onImageUpload, readOnly = false 
     content: content as any,
     editorProps: {
       attributes: {
-        // Use article-content so the editor is true WYSIWYG —
-        // headings, code blocks, tables look exactly like the published page.
         class: readOnly
           ? "article-content p-0 focus:outline-none"
           : "article-content focus:outline-none min-h-[400px] p-6",
+      },
+      handlePaste: (_view, event) => {
+        const items = event.clipboardData?.items
+        if (!items) return false
+
+        for (const item of items) {
+          if (item.type.startsWith("image/")) {
+            event.preventDefault()
+            const file = item.getAsFile()
+            if (file) void handleImageFile(file)
+            return true
+          }
+        }
+        return false
+      },
+      handleDrop: (_view, event, _slice, moved) => {
+        if (moved) return false
+        const file = event.dataTransfer?.files?.[0]
+        if (file?.type.startsWith("image/")) {
+          event.preventDefault()
+          void handleImageFile(file)
+          return true
+        }
+        return false
       },
     },
     onUpdate: ({ editor }) => {
@@ -62,18 +106,17 @@ export function RichEditor({ content, onChange, onImageUpload, readOnly = false 
     },
   })
 
+  useEffect(() => {
+    editorRef.current = editor
+  }, [editor])
+
   if (readOnly) {
     return <EditorContent editor={editor} />
   }
 
-  function handleImageButtonClick() {
-    if (!editor) return
-    setShowMediaPicker(true)
-  }
-
   function handleMediaSelect(url: string) {
     if (!editor) return
-    editor.chain().focus().setImage({ src: url }).run()
+    insertImageUrl(editor, url)
     setShowMediaPicker(false)
   }
 
@@ -99,8 +142,9 @@ export function RichEditor({ content, onChange, onImageUpload, readOnly = false 
       <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
         <EditorToolbar
           editor={editor}
-          onImageUpload={handleImageButtonClick}
+          onImageUpload={() => setShowMediaPicker(true)}
           onVideoInsert={() => setShowVideoPicker(true)}
+          imageUploading={uploadingImage}
         />
         {editor && <LinkBubbleMenu editor={editor} />}
         <EditorContent editor={editor} />

@@ -3,6 +3,7 @@ import path from "path"
 import fs from "fs/promises"
 import sharp from "sharp"
 import { auth } from "@/lib/auth"
+import { canWrite } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
 
 const UPLOADS_DIR = "uploads/images"
@@ -15,6 +16,27 @@ const SUPPORTED: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
   "image/svg+xml": "svg",
+}
+
+const EXT_TO_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+}
+
+function resolveImageType(file: File): { mimetype: string; ext: string } | null {
+  const fromMime = SUPPORTED[file.type]
+  if (fromMime) return { mimetype: file.type, ext: fromMime }
+
+  const nameExt = file.name.split(".").pop()?.toLowerCase()
+  if (nameExt && EXT_TO_MIME[nameExt]) {
+    return { mimetype: EXT_TO_MIME[nameExt], ext: nameExt === "jpeg" ? "jpg" : nameExt }
+  }
+
+  return null
 }
 
 // ---------------------------------------------------------------------------
@@ -49,7 +71,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await auth()
-  if (!session || !["ADMIN", "EDITOR"].includes(session.user.role ?? "")) {
+  if (!session || !canWrite(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -65,13 +87,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 })
   }
 
-  const ext = SUPPORTED[file.type]
-  if (!ext) {
+  const resolved = resolveImageType(file)
+  if (!resolved) {
     return NextResponse.json(
-      { error: `Unsupported image type: ${file.type}` },
+      { error: `Unsupported image type: ${file.type || file.name}` },
       { status: 400 }
     )
   }
+
+  const { mimetype, ext } = resolved
 
   const id = crypto.randomUUID()
   const filename = `${id}.${ext}`
@@ -84,7 +108,7 @@ export async function POST(request: NextRequest) {
 
   // Resize to max 2000px wide (no upscaling) — skip for SVG and GIF.
   let finalBuffer: Buffer
-  if (file.type === "image/svg+xml" || file.type === "image/gif") {
+  if (mimetype === "image/svg+xml" || mimetype === "image/gif") {
     finalBuffer = buffer
   } else {
     finalBuffer = await sharp(buffer)
@@ -101,7 +125,7 @@ export async function POST(request: NextRequest) {
       id,
       filename,
       originalFilename: file.name,
-      mimetype: file.type,
+      mimetype,
       size: BigInt(finalBuffer.byteLength),
       url,
       uploadedBy: session.user.id ?? null,

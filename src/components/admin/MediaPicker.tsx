@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Upload, X, Loader2, Image as ImageIcon, Check } from "lucide-react"
+import { uploadImage } from "@/lib/upload-image"
 
 interface MediaItem {
   id: string
@@ -53,17 +54,16 @@ export function MediaPicker({ onSelect, onClose }: MediaPickerProps) {
   const uploadFile = useCallback(async (file: File) => {
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      const res = await fetch("/api/media", { method: "POST", body: formData })
-      if (res.ok) {
-        const data = await res.json()
-        setMedia((prev) => [data.media, ...prev])
-        setSelectedId(data.media.id)
-      } else {
-        const err = await res.json()
-        alert(err.error ?? "Upload failed")
-      }
+      const url = await uploadImage(file)
+      // Reload media list so the newly uploaded image appears in the grid.
+      const res = await fetch("/api/media")
+      const data = await res.json()
+      const items: MediaItem[] = data.media ?? []
+      setMedia(items)
+      const uploaded = items.find((m) => m.url === url)
+      if (uploaded) setSelectedId(uploaded.id)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload failed")
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ""

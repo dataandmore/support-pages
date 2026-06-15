@@ -26,6 +26,26 @@ function getMeta(ext: string): { contentType: string; cacheControl: string } {
         contentType: "image/jpeg",
         cacheControl: "public, max-age=86400",
       }
+    case ".png":
+      return {
+        contentType: "image/png",
+        cacheControl: "public, max-age=86400",
+      }
+    case ".webp":
+      return {
+        contentType: "image/webp",
+        cacheControl: "public, max-age=86400",
+      }
+    case ".gif":
+      return {
+        contentType: "image/gif",
+        cacheControl: "public, max-age=86400",
+      }
+    case ".svg":
+      return {
+        contentType: "image/svg+xml",
+        cacheControl: "public, max-age=86400",
+      }
     default:
       return {
         contentType: "application/octet-stream",

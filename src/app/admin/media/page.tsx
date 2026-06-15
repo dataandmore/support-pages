@@ -1,5 +1,6 @@
 "use client"
 
+import { uploadImage } from "@/lib/upload-image"
 import { useEffect, useRef, useState } from "react"
 import {
   Upload,
@@ -76,16 +77,10 @@ export default function MediaPage() {
   async function uploadFile(file: File) {
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      const res = await fetch("/api/media", { method: "POST", body: formData })
-      if (res.ok) {
-        const data = await res.json()
-        setMedia((prev) => [data.media, ...prev])
-      } else {
-        const err = await res.json()
-        alert(err.error ?? "Upload failed")
-      }
+      await uploadImage(file)
+      await loadMedia()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload failed")
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
