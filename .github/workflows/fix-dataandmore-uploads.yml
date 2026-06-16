@@ -1,0 +1,60 @@
+# Re-apply dataandmore.com upload serving fix if needed after nginx redeploy.
+# Root cause: Next.js standalone embeds public/ at build time; CMS uploads land on
+# disk at runtime and need nginx to serve /uploads/ directly.
+name: Fix dataandmore.com Uploads
+
+on:
+  workflow_dispatch:
+
+env:
+  DEPLOY_HOST: 157.180.21.113
+  DEPLOY_USER: root
+
+jobs:
+  fix-uploads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Patch nginx and verify uploads
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script_stop: true
+          command_timeout: 5m
+          script: |
+            set -euo pipefail
+            NGINX_CONF=/etc/nginx/sites-enabled/dataandmore.com
+
+            if ! grep -q 'location ^~ /uploads/' "$NGINX_CONF"; then
+              cp "$NGINX_CONF" "${NGINX_CONF}.bak.$(date +%s)"
+              LINE=$(grep -n 'location ^~ /api/mcp' "$NGINX_CONF" | head -1 | cut -d: -f1)
+              test -n "$LINE"
+              {
+                head -n $((LINE - 1)) "$NGINX_CONF"
+                cat <<'NGINX'
+
+                # User uploads (runtime, not in Next standalone build)
+                location ^~ /uploads/ {
+                    alias /opt/dataandmore/public/uploads/;
+                    access_log off;
+                    expires 30d;
+                    add_header Cache-Control "public, max-age=2592000";
+                }
+
+            NGINX
+                tail -n +"$LINE" "$NGINX_CONF"
+              } > "${NGINX_CONF}.new"
+              mv "${NGINX_CONF}.new" "$NGINX_CONF"
+              nginx -t
+              systemctl reload nginx
+            fi
+
+            chmod o+x /opt/dataandmore /opt/dataandmore/public
+
+            CODE=$(curl -sI -o /dev/null -w '%{http_code}' \
+              "https://dataandmore.com/uploads/events/make-purview-great-again.png")
+            test "$CODE" = "200"
+            echo "Uploads OK (HTTP $CODE)"
