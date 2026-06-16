@@ -60,11 +60,18 @@ jobs:
 
             echo ""
             echo "=== Nginx uploads config ==="
-            grep -r 'uploads' /etc/nginx/ 2>/dev/null || true
+            cat /etc/nginx/sites-enabled/dataandmore.com 2>/dev/null || true
 
             echo ""
-            echo "=== Recent uploads dir listing ==="
-            find /opt -maxdepth 5 -type d -name uploads 2>/dev/null | while read d; do
-              echo "--- full listing: $d ---"
-              ls -la "$d" 2>/dev/null | tail -30
-            done
+            echo "=== App process ==="
+            ps aux | rg -i 'next|node|pm2' | head -20
+
+            echo ""
+            echo "=== Standalone/public uploads ==="
+            ls -la /opt/dataandmore/public/uploads/1781586472083* 2>/dev/null
+            ls -la /opt/dataandmore/.next/standalone/public/uploads/ 2>/dev/null | head -10
+
+            echo ""
+            echo "=== Curl local uploads ==="
+            curl -sI http://127.0.0.1:3000/uploads/1781586472083-Screenshot_2026-06-04_at_09.49.12.png | head -5
+            curl -sI http://127.0.0.1:3000/uploads/events/make-purview-great-again.png | head -5
