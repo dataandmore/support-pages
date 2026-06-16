@@ -10,7 +10,6 @@ on:
 env:
   DEPLOY_HOST: 157.180.21.113
   DEPLOY_USER: root
-  UPLOADS_DIR: /opt/dataandmore/public/uploads
 
 jobs:
   fix-uploads:
@@ -24,43 +23,43 @@ jobs:
           username: ${{ env.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
-          script_stop: true
+          script_stop: false
           command_timeout: 5m
           script: |
             set -euo pipefail
             NGINX_CONF=/etc/nginx/sites-enabled/dataandmore.com
-            MARKER="# ── User uploads (runtime, not in Next standalone build) ──"
 
-            if grep -q "location \^~ /uploads/" "$NGINX_CONF"; then
+            if grep -q 'location ^~ /uploads/' "$NGINX_CONF"; then
               echo "Uploads location already configured"
             else
+              echo "Patching nginx config..."
               cp "$NGINX_CONF" "${NGINX_CONF}.bak.$(date +%s)"
-              awk '
-                /location \^~ \/api\/mcp/ && !done {
-                  print "    # User uploads (runtime, not in Next standalone build)"
-                  print "    location ^~ /uploads/ {"
-                  print "        alias /opt/dataandmore/public/uploads/;"
-                  print "        access_log off;"
-                  print "        expires 30d;"
-                  print "        add_header Cache-Control \"public, max-age=2592000\";"
-                  print "    }"
-                  print ""
-                  done=1
+              LINE=$(grep -n 'location ^~ /api/mcp' "$NGINX_CONF" | head -1 | cut -d: -f1)
+              if [ -z "$LINE" ]; then
+                echo "Could not find /api/mcp block in nginx config"
+                exit 1
+              fi
+              {
+                head -n $((LINE - 1)) "$NGINX_CONF"
+                cat <<'NGINX'
+
+                # User uploads (runtime, not in Next standalone build)
+                location ^~ /uploads/ {
+                    alias /opt/dataandmore/public/uploads/;
+                    access_log off;
+                    expires 30d;
+                    add_header Cache-Control "public, max-age=2592000";
                 }
-                { print }
-              ' "$NGINX_CONF" > "${NGINX_CONF}.new"
+
+            NGINX
+                tail -n +"$LINE" "$NGINX_CONF"
+              } > "${NGINX_CONF}.new"
               mv "${NGINX_CONF}.new" "$NGINX_CONF"
               nginx -t
               systemctl reload nginx
               echo "Nginx reloaded"
             fi
 
-            echo ""
-            echo "=== Verify via nginx (localhost) ==="
-            curl -sI -H "Host: dataandmore.com" \
-              "https://127.0.0.1/uploads/1781586472083-Screenshot_2026-06-04_at_09.49.12.png" \
-              --insecure | head -5
-
-            echo ""
             echo "=== Verify public URL ==="
             curl -sI "https://dataandmore.com/uploads/1781586472083-Screenshot_2026-06-04_at_09.49.12.png" | head -5
+            curl -sI "https://dataandmore.com/uploads/1781514028053-dlp-scan-release.png" | head -5
