@@ -60,6 +60,10 @@ jobs:
               echo "Nginx reloaded"
             fi
 
+            # nginx (www-data) must traverse to public/uploads
+            chmod o+x /opt/dataandmore /opt/dataandmore/public
+            echo "Fixed directory traverse permissions"
+
             echo "=== Verify public URL ==="
             curl -sI "https://dataandmore.com/uploads/1781586472083-Screenshot_2026-06-04_at_09.49.12.png" | head -5
             curl -sI "https://dataandmore.com/uploads/1781514028053-dlp-scan-release.png" | head -5
