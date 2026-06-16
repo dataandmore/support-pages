@@ -1,0 +1,59 @@
+# One-time server diagnostics for dataandmore.com upload issues.
+name: Diagnose Uploads
+
+on:
+  push:
+    branches: [cursor/fix-dataandmore-uploads-2bbe]
+  workflow_dispatch:
+
+env:
+  DEPLOY_HOST: 89.167.19.63
+  DEPLOY_USER: root
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect production server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script_stop: false
+          command_timeout: 5m
+          script: |
+            set +e
+            echo "=== /opt layout ==="
+            ls -la /opt/
+
+            echo ""
+            echo "=== Docker containers ==="
+            docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
+
+            echo ""
+            echo "=== Nginx sites ==="
+            ls -la /etc/nginx/sites-enabled/ 2>/dev/null || true
+            rg -l 'dataandmore' /etc/nginx/sites-enabled/ 2>/dev/null | while read f; do
+              echo "--- $f ---"
+              cat "$f"
+            done
+
+            echo ""
+            echo "=== Upload directories ==="
+            find /opt -maxdepth 4 -type d -name uploads 2>/dev/null | while read d; do
+              echo "--- $d ---"
+              ls -la "$d" | head -20
+              du -sh "$d" 2>/dev/null
+            done
+
+            echo ""
+            echo "=== Sample upload file check ==="
+            find /opt -name '1781586472083-Screenshot_2026-06-04_at_09.49.12.png' 2>/dev/null
+            find /opt -name 'make-purview-great-again.png' 2>/dev/null
+
+            echo ""
+            echo "=== dataandmore app compose files ==="
+            find /opt -maxdepth 3 -name 'docker-compose*.yml' 2>/dev/null
