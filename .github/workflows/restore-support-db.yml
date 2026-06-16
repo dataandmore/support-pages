@@ -1,0 +1,89 @@
+# Restore corrupted support portal Postgres and bring site back up
+name: Restore Support Portal DB
+
+on:
+  push:
+    branches: [cursor/repair-support-portal-2bbe]
+  workflow_dispatch:
+
+env:
+  DEPLOY_HOST: 89.167.19.63
+  DEPLOY_USER: root
+  DEPLOY_PATH: /opt/support-portal
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Restore database from backup
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script_stop: true
+          command_timeout: 18m
+          script: |
+            set -euo pipefail
+            APP_DIR="${{ env.DEPLOY_PATH }}"
+            cd "$APP_DIR"
+
+            echo "=== Available backups ==="
+            ls -lah /opt/backups/ 2>/dev/null || ls -lah /opt/support-portal/backups/ 2>/dev/null || true
+            find /opt -maxdepth 3 -name '*.sql' -o -name '*.sql.gz' 2>/dev/null | head -20
+
+            BACKUP=$(find /opt/backups /opt/support-portal/backups -type f \( -name '*.sql.gz' -o -name '*.sql' \) 2>/dev/null | sort | tail -1)
+            if [ -z "$BACKUP" ]; then
+              echo "No SQL backup found — trying pg_resetwal recovery"
+              docker compose -f docker-compose.prod.yml --env-file .env.prod stop db app
+              VOL=$(docker volume inspect support-portal_postgres_data --format '{{ .Mountpoint }}')
+              echo "Volume mount: $VOL"
+              docker run --rm -v support-portal_postgres_data:/var/lib/postgresql/data postgres:16-alpine \
+                pg_resetwal -f /var/lib/postgresql/data
+              docker compose -f docker-compose.prod.yml --env-file .env.prod up -d db
+            else
+              echo "Restoring from: $BACKUP"
+              docker compose -f docker-compose.prod.yml --env-file .env.prod stop app db
+
+              # Reset corrupted volume
+              docker compose -f docker-compose.prod.yml --env-file .env.prod rm -sf db
+              docker volume rm -f support-portal_postgres_data || true
+              docker volume create support-portal_postgres_data
+
+              docker compose -f docker-compose.prod.yml --env-file .env.prod up -d db
+
+              echo "Waiting for fresh DB..."
+              for i in $(seq 1 60); do
+                if docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T db pg_isready -U support_user -d support_portal >/dev/null 2>&1; then
+                  echo "DB ready (attempt $i)"
+                  break
+                fi
+                sleep 2
+              done
+
+              if echo "$BACKUP" | grep -q '\.gz$'; then
+                gunzip -c "$BACKUP" | docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T db \
+                  psql -U support_user -d support_portal
+              else
+                cat "$BACKUP" | docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T db \
+                  psql -U support_user -d support_portal
+              fi
+            fi
+
+            echo "=== Start app ==="
+            for i in $(seq 1 60); do
+              if docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T db pg_isready -U support_user -d support_portal >/dev/null 2>&1; then
+                break
+              fi
+              sleep 2
+            done
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps app
+            sleep 8
+
+            echo "=== Verify ==="
+            curl -sI http://127.0.0.1:3000/en | head -5
+            curl -sI https://support.dataandmore.com/en | head -5
+            docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T db \
+              psql -U support_user -d support_portal -c 'SELECT COUNT(*) AS categories FROM "Category";'
