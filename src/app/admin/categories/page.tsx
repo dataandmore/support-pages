@@ -1,7 +1,24 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { GripVertical, Globe, Lock, Plus, X, Pencil, type LucideIcon } from "lucide-react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { GripVertical, Globe, Lock, Plus, X, Pencil } from "lucide-react"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import {
   CATEGORY_ICONS, resolveIcon, getCategoryIcon,
 } from "@/lib/category-icons"
@@ -335,11 +352,40 @@ function CategoryRows({
   const CatIcon = getCategoryIcon(cat.icon, cat.slug)
   const isEditing = editingId === cat.id
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: cat.id, disabled: isEditing })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  }
+
   return (
     <>
-      <tr className={`border-b border-gray-50 transition-colors ${isEditing ? "bg-orange-50/30" : "hover:bg-gray-50"}`}>
-        <td className="pl-3 text-gray-300">
-          <GripVertical className="w-4 h-4" />
+      <tr
+        ref={setNodeRef}
+        style={style}
+        className={`group border-b border-gray-50 transition-colors ${
+          isEditing ? "bg-orange-50/30" : isDragging ? "bg-orange-50/50" : "hover:bg-gray-50"
+        }`}
+      >
+        <td className="pl-3">
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-1 rounded cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Drag to reorder"
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
         </td>
         <td className="px-4 py-3">
           <button
@@ -400,7 +446,9 @@ function CategoryRows({
       )}
 
       {/* Render children (subcategories) indented */}
-      {(cat.children ?? []).map((child) => (
+      {[...(cat.children ?? [])]
+        .sort((a, b) => a.position - b.position)
+        .map((child) => (
         <CategoryRows
           key={child.id}
           cat={child}
@@ -424,6 +472,11 @@ export default function CategoriesPage() {
   const [showNew, setShowNew]       = useState(false)
   const [editingId, setEditingId]   = useState<string | null>(null)
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
   useEffect(() => {
     fetch("/api/categories")
       .then((r) => r.json())
@@ -432,6 +485,86 @@ export default function CategoriesPage() {
         setLoading(false)
       })
   }, [])
+
+  const topLevel = useMemo(
+    () =>
+      categories
+        .filter((c) => !c.parentId)
+        .sort((a, b) => a.position - b.position),
+    [categories]
+  )
+
+  const sortableIds = useMemo(() => {
+    const ids: string[] = []
+    for (const cat of topLevel) {
+      ids.push(cat.id)
+      for (const child of [...(cat.children ?? [])].sort((a, b) => a.position - b.position)) {
+        ids.push(child.id)
+      }
+    }
+    return ids
+  }, [topLevel])
+
+  const getSiblingList = useCallback(
+    (id: string): { parentId: string | null; items: Category[] } | null => {
+      if (topLevel.some((c) => c.id === id)) {
+        return { parentId: null, items: topLevel }
+      }
+      for (const cat of topLevel) {
+        const children = [...(cat.children ?? [])].sort((a, b) => a.position - b.position)
+        if (children.some((c) => c.id === id)) {
+          return { parentId: cat.id, items: children }
+        }
+      }
+      return null
+    },
+    [topLevel]
+  )
+
+  const applyReorder = useCallback((parentId: string | null, reordered: Category[]) => {
+    setCategories((prev) =>
+      prev.map((c) => {
+        const idx = reordered.findIndex((r) => r.id === c.id)
+        if (idx !== -1 && (parentId === null ? !c.parentId : c.parentId === parentId)) {
+          return { ...c, position: idx }
+        }
+        if (parentId !== null && c.id === parentId) {
+          return {
+            ...c,
+            children: reordered.map((ch, i) => ({ ...ch, position: i })),
+          }
+        }
+        return c
+      })
+    )
+  }, [])
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+
+      const activeGroup = getSiblingList(active.id as string)
+      const overGroup = getSiblingList(over.id as string)
+      if (!activeGroup || !overGroup || activeGroup.parentId !== overGroup.parentId) return
+
+      const oldIndex = activeGroup.items.findIndex((c) => c.id === active.id)
+      const newIndex = activeGroup.items.findIndex((c) => c.id === over.id)
+      if (oldIndex === -1 || newIndex === -1) return
+
+      const reordered = arrayMove(activeGroup.items, oldIndex, newIndex)
+      applyReorder(activeGroup.parentId, reordered)
+
+      fetch("/api/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reorder: reordered.map((c, i) => ({ id: c.id, position: i })),
+        }),
+      })
+    },
+    [applyReorder, getSiblingList]
+  )
 
   function getTranslation(cat: Category, locale: string) {
     return cat.translations.find((t) => t.locale === locale)
@@ -484,32 +617,40 @@ export default function CategoriesPage() {
       )}
 
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50">
-              <th className="w-8"></th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Category</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Articles</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Access</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Translations</th>
-              <th className="w-10"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {categories.filter((c) => !c.parentId).map((cat) => (
-              <CategoryRows
-                key={cat.id}
-                cat={cat}
-                editingId={editingId}
-                setEditingId={setEditingId}
-                toggleGated={toggleGated}
-                handleSaved={handleSaved}
-                getTranslation={getTranslation}
-                indent={false}
-              />
-            ))}
-          </tbody>
-        </table>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50">
+                <th className="w-8"></th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Category</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Articles</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Access</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Translations</th>
+                <th className="w-10"></th>
+              </tr>
+            </thead>
+            <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+              <tbody>
+                {topLevel.map((cat) => (
+                  <CategoryRows
+                    key={cat.id}
+                    cat={cat}
+                    editingId={editingId}
+                    setEditingId={setEditingId}
+                    toggleGated={toggleGated}
+                    handleSaved={handleSaved}
+                    getTranslation={getTranslation}
+                    indent={false}
+                  />
+                ))}
+              </tbody>
+            </SortableContext>
+          </table>
+        </DndContext>
       </div>
     </div>
   )
