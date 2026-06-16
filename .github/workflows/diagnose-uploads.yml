@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  DEPLOY_HOST: 89.167.19.63
+  DEPLOY_HOST: 157.180.21.113
   DEPLOY_USER: root
 
 jobs:
@@ -57,3 +57,14 @@ jobs:
             echo ""
             echo "=== dataandmore app compose files ==="
             find /opt -maxdepth 3 -name 'docker-compose*.yml' 2>/dev/null
+
+            echo ""
+            echo "=== Nginx uploads config ==="
+            grep -r 'uploads' /etc/nginx/ 2>/dev/null || true
+
+            echo ""
+            echo "=== Recent uploads dir listing ==="
+            find /opt -maxdepth 5 -type d -name uploads 2>/dev/null | while read d; do
+              echo "--- full listing: $d ---"
+              ls -la "$d" 2>/dev/null | tail -30
+            done
